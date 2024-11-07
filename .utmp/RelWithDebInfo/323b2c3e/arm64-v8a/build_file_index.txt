@@ -1,2 +1,0 @@
-/Users/neil/Code/2024Fall/UnityMultiplayerSample/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/CMakeLists.txt
-/Users/neil/Code/2024Fall/UnityMultiplayerSample/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/GameActivity/CMakeLists.txt

@@ -1,5 +1,0 @@
-/Users/neil/Code/2024Fall/UnityMultiplayerSample/.utmp/RelWithDebInfo/323b2c3e/arm64-v8a/CMakeFiles/edit_cache.dir
-/Users/neil/Code/2024Fall/UnityMultiplayerSample/.utmp/RelWithDebInfo/323b2c3e/arm64-v8a/CMakeFiles/rebuild_cache.dir
-/Users/neil/Code/2024Fall/UnityMultiplayerSample/.utmp/RelWithDebInfo/323b2c3e/arm64-v8a/GameActivity/CMakeFiles/game.dir
-/Users/neil/Code/2024Fall/UnityMultiplayerSample/.utmp/RelWithDebInfo/323b2c3e/arm64-v8a/GameActivity/CMakeFiles/edit_cache.dir
-/Users/neil/Code/2024Fall/UnityMultiplayerSample/.utmp/RelWithDebInfo/323b2c3e/arm64-v8a/GameActivity/CMakeFiles/rebuild_cache.dir
