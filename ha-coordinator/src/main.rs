@@ -21,16 +21,14 @@ async fn quick_join(
     let mut lobbies = data.lobbies.lock().unwrap();
     
     // First, look for available lobbies
-    for (_, lobby) in lobbies.iter_mut() {
-        if lobby.scene_name == req.scene_name {
-            lobby.player_count += 1;  // Increment player count immediately
-            return HttpResponse::Ok().json(QuickJoinResponse {
-                lobby_id: Some(lobby.lobby_id.clone()),
-                join_code: Some(lobby.join_code.clone()),
-                should_create: false,
-                creation_token: None,
-            });
-        }
+    if let Some(lobby) = lobbies.values_mut().next() {
+        lobby.player_count += 1;  // Increment player count immediately
+        return HttpResponse::Ok().json(QuickJoinResponse {
+            lobby_id: Some(lobby.lobby_id.clone()),
+            join_code: Some(lobby.join_code.clone()),
+            should_create: false,
+            creation_token: None,
+        });
     }
 
     // No lobbies found, handle creation permission
@@ -86,7 +84,6 @@ async fn register_lobby(
         join_code: req.join_code.clone(),
         player_count: 1,
         max_players: req.max_players,
-        scene_name: req.scene_name.clone(),
     });
 
     // Clear creation lock

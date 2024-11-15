@@ -6,12 +6,10 @@ pub struct LobbyInfo {
     pub join_code: String,
     pub player_count: u32,
     pub max_players: u32,
-    pub scene_name: String,
 }
 
 #[derive(Deserialize)]
 pub struct QuickJoinRequest {
-    pub scene_name: String,
     pub build_id: String,
     pub max_players: u32,
 }
@@ -28,7 +26,6 @@ pub struct QuickJoinResponse {
 pub struct RegisterLobbyRequest {
     pub lobby_id: String,
     pub join_code: String,
-    pub scene_name: String,
     pub max_players: u32,
     pub creation_token: u64,
 } 

@@ -98,7 +98,6 @@ namespace XRMultiplayer
                 {
                     var request = new
                     {
-                        scene_name = SceneManager.GetActiveScene().name,
                         build_id = Application.version,
                         max_players = XRINetworkGameManager.maxPlayers
                     };
@@ -155,7 +154,6 @@ namespace XRMultiplayer
                 {
                     lobby_id = lobby.Id,
                     join_code = lobby.Data[k_JoinCodeKeyIdentifier].Value,
-                    scene_name = SceneManager.GetActiveScene().name,
                     max_players = XRINetworkGameManager.maxPlayers,
                     creation_token = m_CreationToken.Value
                 };
