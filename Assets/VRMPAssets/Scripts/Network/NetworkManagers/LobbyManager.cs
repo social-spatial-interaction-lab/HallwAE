@@ -10,6 +10,8 @@ using Unity.Netcode.Transports.UTP;
 using Unity.XR.CoreUtils.Bindings.Variables;
 using Unity.Services.Authentication;
 using UnityEngine.SceneManagement;
+using System.Net.Http;
+using System.Text;
 
 namespace XRMultiplayer
 {
@@ -61,6 +63,8 @@ namespace XRMultiplayer
 
         const string k_DebugPrepend = "<color=#EC0CFA>[Lobby Manager]</color> ";
 
+        private const string k_CoordinatorUrl = "http://127.0.0.1:8080";
+        private readonly HttpClient m_HttpClient = new HttpClient();
 
         /// <summary>
         /// See <see cref="MonoBehaviour"/>.
@@ -83,31 +87,47 @@ namespace XRMultiplayer
         /// <returns></returns>
         public async Task<Lobby> QuickJoinLobby()
         {
-            m_Status.Value = "Checking For Existing Lobbies.";
+            m_Status.Value = "Checking For Existing Lobbies via Coordinator";
             Utils.Log($"{k_DebugPrepend}{m_Status.Value}");
-            Lobby lobby;
-            try
+            
+            try 
             {
-                Utils.Log($"{k_DebugPrepend} Getting lobby via Quick Join");
-                lobby = await LobbyService.Instance.QuickJoinLobbyAsync(GetQuickJoinFilterOptions());
-                await SetupRelay(lobby);
-                ConnectedToLobby(lobby);
-
-                if (lobby != null)
+                // Create request to coordinator
+                var request = new
                 {
-                    m_ConnectedLobby = lobby;
-                    return lobby;
-                }
-            }
-            catch
-            {
-                m_Status.Value = "No Available Lobbies. Creating New Lobby.";
-                Utils.Log($"{k_DebugPrepend}{m_Status.Value}");
-            }
+                    scene_name = SceneManager.GetActiveScene().name,
+                    build_id = Application.version,
+                    max_players = XRINetworkGameManager.maxPlayers
+                };
+                
+                var response = await m_HttpClient.PostAsync(
+                    $"{k_CoordinatorUrl}/quick_join",
+                    new StringContent(JsonUtility.ToJson(request), Encoding.UTF8, "application/json")
+                );
+                
+                var coordinatorResponse = JsonUtility.FromJson<QuickJoinResponse>(
+                    await response.Content.ReadAsStringAsync()
+                );
 
-            // If no existing Lobbies, then create a new one.
-            lobby = await CreateLobby();
-            return lobby;
+                if (!coordinatorResponse.should_create)
+                {
+                    // Join existing lobby
+                    var lobby = await JoinLobby(null, coordinatorResponse.join_code);
+                    if (lobby != null)
+                    {
+                        return lobby;
+                    }
+                }
+
+                // Create new lobby if no suitable lobby found or join failed
+                return await CreateLobby();
+            }
+            catch (Exception e)
+            {
+                Utils.Log($"{k_DebugPrepend}Coordinator error: {e.Message}", 1);
+                // Fallback to creating new lobby
+                return await CreateLobby();
+            }
         }
 
         /// <summary>
@@ -493,5 +513,13 @@ namespace XRMultiplayer
             return (XRINetworkGameManager.Instance.lobbyManager.connectedLobby == null) ||
             (XRINetworkGameManager.Instance.lobbyManager.connectedLobby != null && lobby.Id != XRINetworkGameManager.Instance.lobbyManager.connectedLobby.Id);
         }
+    }
+
+    [Serializable]
+    private class QuickJoinResponse
+    {
+        public string lobby_id;
+        public string join_code;
+        public bool should_create;
     }
 }
