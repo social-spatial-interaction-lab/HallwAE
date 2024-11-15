@@ -66,6 +66,8 @@ namespace XRMultiplayer
         private const string k_CoordinatorUrl = "http://127.0.0.1:8080";
         private readonly HttpClient m_HttpClient = new HttpClient();
 
+        private ulong? m_CreationToken = null;
+
         /// <summary>
         /// See <see cref="MonoBehaviour"/>.
         /// </summary>
@@ -90,43 +92,86 @@ namespace XRMultiplayer
             m_Status.Value = "Checking For Existing Lobbies via Coordinator";
             Utils.Log($"{k_DebugPrepend}{m_Status.Value}");
             
-            try 
+            while (true) // Will retry if needed
             {
-                // Create request to coordinator
-                var request = new
+                try 
                 {
-                    scene_name = SceneManager.GetActiveScene().name,
-                    build_id = Application.version,
-                    max_players = XRINetworkGameManager.maxPlayers
-                };
-                
-                var response = await m_HttpClient.PostAsync(
-                    $"{k_CoordinatorUrl}/quick_join",
-                    new StringContent(JsonUtility.ToJson(request), Encoding.UTF8, "application/json")
-                );
-                
-                var coordinatorResponse = JsonUtility.FromJson<QuickJoinResponse>(
-                    await response.Content.ReadAsStringAsync()
-                );
-
-                if (!coordinatorResponse.should_create)
-                {
-                    // Join existing lobby
-                    var lobby = await JoinLobby(null, coordinatorResponse.join_code);
-                    if (lobby != null)
+                    var request = new
                     {
+                        scene_name = SceneManager.GetActiveScene().name,
+                        build_id = Application.version,
+                        max_players = XRINetworkGameManager.maxPlayers
+                    };
+                    
+                    var response = await m_HttpClient.PostAsync(
+                        $"{k_CoordinatorUrl}/quick_join",
+                        new StringContent(JsonUtility.ToJson(request), Encoding.UTF8, "application/json")
+                    );
+                    
+                    var coordinatorResponse = JsonUtility.FromJson<QuickJoinResponse>(
+                        await response.Content.ReadAsStringAsync()
+                    );
+
+                    if (coordinatorResponse.should_create)
+                    {
+                        m_CreationToken = coordinatorResponse.creation_token;
+                        var lobby = await CreateLobby();
+                        if (lobby != null)
+                        {
+                            await RegisterNewLobby(lobby);
+                        }
                         return lobby;
                     }
+                    else if (coordinatorResponse.join_code != null)
+                    {
+                        // Join existing lobby
+                        var lobby = await JoinLobby(null, coordinatorResponse.join_code);
+                        if (lobby != null)
+                        {
+                            return lobby;
+                        }
+                    }
+                    
+                    // If we get here, either someone else is creating a lobby or our join failed
+                    // Wait a bit and retry
+                    await Task.Delay(1000);
+                    continue;
                 }
+                catch (Exception e)
+                {
+                    Utils.Log($"{k_DebugPrepend}Coordinator error: {e.Message}", 1);
+                    return await CreateLobby(); // Fallback to direct creation
+                }
+            }
+        }
 
-                // Create new lobby if no suitable lobby found or join failed
-                return await CreateLobby();
+        private async Task RegisterNewLobby(Lobby lobby)
+        {
+            if (!m_CreationToken.HasValue) return;
+
+            try
+            {
+                var request = new
+                {
+                    lobby_id = lobby.Id,
+                    join_code = lobby.Data[k_JoinCodeKeyIdentifier].Value,
+                    scene_name = SceneManager.GetActiveScene().name,
+                    max_players = XRINetworkGameManager.maxPlayers,
+                    creation_token = m_CreationToken.Value
+                };
+
+                await m_HttpClient.PostAsync(
+                    $"{k_CoordinatorUrl}/register_lobby",
+                    new StringContent(JsonUtility.ToJson(request), Encoding.UTF8, "application/json")
+                );
             }
             catch (Exception e)
             {
-                Utils.Log($"{k_DebugPrepend}Coordinator error: {e.Message}", 1);
-                // Fallback to creating new lobby
-                return await CreateLobby();
+                Utils.Log($"{k_DebugPrepend}Failed to register lobby: {e.Message}", 1);
+            }
+            finally
+            {
+                m_CreationToken = null;
             }
         }
 
@@ -521,5 +566,6 @@ namespace XRMultiplayer
         public string lobby_id;
         public string join_code;
         public bool should_create;
+        public ulong? creation_token;
     }
 }
