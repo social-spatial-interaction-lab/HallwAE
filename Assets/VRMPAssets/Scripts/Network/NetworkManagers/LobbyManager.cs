@@ -63,10 +63,13 @@ namespace XRMultiplayer
 
         const string k_DebugPrepend = "<color=#EC0CFA>[Lobby Manager]</color> ";
 
-        private const string k_CoordinatorUrl = "http://127.0.0.1:8080";
+        private const string k_CoordinatorUrl = "http://192.168.0.27:8111";
         private readonly HttpClient m_HttpClient = new HttpClient();
 
         private ulong? m_CreationToken = null;
+
+        [Tooltip("If true, will automatically try to join or create a lobby when the game starts")]
+        public bool autoJoinOnStart = true;
 
         /// <summary>
         /// See <see cref="MonoBehaviour"/>.
@@ -80,6 +83,23 @@ namespace XRMultiplayer
                 hideEditorFromLobby = false;
             }
             s_HideEditorInLobbies = hideEditorFromLobby;
+        }
+
+        private async void Start()
+        {
+            if (autoJoinOnStart)
+            {
+                try 
+                {
+                    m_Status.Value = "Auto-joining lobby...";
+                    await QuickJoinLobby();
+                }
+                catch (Exception e)
+                {
+                    Utils.Log($"{k_DebugPrepend}Failed to auto-join lobby: {e.Message}", 1);
+                    OnLobbyFailed?.Invoke("Failed to auto-join lobby");
+                }
+            }
         }
 
         /// <summary>
@@ -559,7 +579,7 @@ namespace XRMultiplayer
     }
 
     [Serializable]
-    private class QuickJoinResponse
+    public class QuickJoinResponse
     {
         public string lobby_id;
         public string join_code;

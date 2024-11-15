@@ -105,7 +105,7 @@ async fn main() -> std::io::Result<()> {
             .route("/quick_join", web::post().to(quick_join))
             .route("/register_lobby", web::post().to(register_lobby))
     })
-    .bind("127.0.0.1:8080")?
+    .bind("0.0.0.0:8111")?
     .run()
     .await
 }
