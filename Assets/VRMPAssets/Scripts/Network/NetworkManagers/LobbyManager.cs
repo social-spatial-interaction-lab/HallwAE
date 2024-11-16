@@ -66,7 +66,7 @@ namespace XRMultiplayer
         private const string k_CoordinatorUrl = "http://192.168.0.27:8111";
         private readonly HttpClient m_HttpClient = new HttpClient();
 
-        private ulong? m_CreationToken = null;
+        private ulong m_CreationToken = 0;
 
         /// <summary>
         /// See <see cref="MonoBehaviour"/>.
@@ -141,7 +141,7 @@ namespace XRMultiplayer
 
         private async Task RegisterNewLobby(Lobby lobby)
         {
-            if (!m_CreationToken.HasValue) return;
+            if (m_CreationToken == 0) return;
 
             try
             {
@@ -150,7 +150,7 @@ namespace XRMultiplayer
                     lobby_id = lobby.Id,
                     join_code = lobby.Data[k_JoinCodeKeyIdentifier].Value,
                     max_players = XRINetworkGameManager.maxPlayers,
-                    creation_token = m_CreationToken.Value
+                    creation_token = m_CreationToken
                 };
 
                 var response = await m_HttpClient.PostAsync(
@@ -168,7 +168,7 @@ namespace XRMultiplayer
             }
             finally
             {
-                m_CreationToken = null;
+                m_CreationToken = 0;
             }
         }
 
@@ -563,6 +563,6 @@ namespace XRMultiplayer
         public string lobby_id;
         public string join_code;
         public bool should_create;
-        public ulong? creation_token;
+        public ulong creation_token;
     }
 }

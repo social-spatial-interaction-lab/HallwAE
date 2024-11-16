@@ -13,7 +13,7 @@ pub struct QuickJoinResponse {
     pub lobby_id: Option<String>,
     pub join_code: Option<String>,
     pub should_create: bool,
-    pub creation_token: Option<u64>,
+    pub creation_token: u64,
 }
 
 #[derive(Deserialize)]

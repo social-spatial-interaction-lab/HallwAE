@@ -33,7 +33,7 @@ async fn quick_join(data: web::Data<AppState>) -> impl Responder {
             lobby_id: Some(lobby.lobby_id.clone()),
             join_code: Some(lobby.join_code.clone()),
             should_create: false,
-            creation_token: None,
+            creation_token: 0,
         });
     }
 
@@ -56,7 +56,7 @@ async fn quick_join(data: web::Data<AppState>) -> impl Responder {
                 lobby_id: None,
                 join_code: None,
                 should_create: false,
-                creation_token: None,
+                creation_token: 0,
             });
         }
         info!("Creation lock expired after {}s", lock_duration);
@@ -76,7 +76,7 @@ async fn quick_join(data: web::Data<AppState>) -> impl Responder {
         lobby_id: None,
         join_code: None,
         should_create: true,
-        creation_token: Some(creation_token),
+        creation_token: creation_token,
     })
 }
 
