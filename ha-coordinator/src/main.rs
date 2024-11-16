@@ -128,6 +128,22 @@ async fn register_lobby(
     HttpResponse::Ok().json("Lobby registered successfully")
 }
 
+async fn unregister_lobby(
+    data: web::Data<AppState>,
+    lobby_id: web::Path<String>,
+) -> impl Responder {
+    info!("Unregister lobby request - ID: {}", lobby_id);
+
+    let mut lobbies = data.lobbies.lock().unwrap();
+    if lobbies.remove(lobby_id.as_str()).is_some() {
+        info!("Lobby {} unregistered. Total lobbies: {}", lobby_id, lobbies.len());
+        HttpResponse::Ok().json("Lobby unregistered successfully")
+    } else {
+        warn!("Lobby {} not found", lobby_id);
+        HttpResponse::NotFound().json("Lobby not found")
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Initialize logger with timestamp
@@ -150,6 +166,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(app_state.clone())
             .route("/quick_join", web::post().to(quick_join))
             .route("/register_lobby", web::post().to(register_lobby))
+            .route("/unregister_lobby/{lobby_id}", web::delete().to(unregister_lobby))
     })
     .bind("0.0.0.0:8111")?
     .run()

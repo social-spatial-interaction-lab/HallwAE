@@ -462,7 +462,9 @@ namespace XRMultiplayer
                     {
                         // Delete Lobby if current owner
                         Utils.Log($"{k_DebugPrepend}Owner of lobby, shutting down.");
-                        await LobbyService.Instance.DeleteLobbyAsync(m_ConnectedLobby.Id);
+                        string lobbyId = m_ConnectedLobby.Id; // Store ID before nulling the lobby
+                        await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
+                        await UnregisterLobby(lobbyId);
                         m_ConnectedLobby = null;
                     }
                     else
@@ -505,6 +507,21 @@ namespace XRMultiplayer
             return false;
         }
 
+        private async Task UnregisterLobby(string lobbyId)
+        {
+            try
+            {
+                var response = await m_HttpClient.DeleteAsync($"{k_CoordinatorUrl}/unregister_lobby/{lobbyId}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    Utils.Log($"{k_DebugPrepend}Failed to unregister lobby: {response.StatusCode}", 1);
+                }
+            }
+            catch (Exception e)
+            {
+                Utils.Log($"{k_DebugPrepend}Failed to unregister lobby: {e.Message}", 1);
+            }
+        }
 
         public static async Task<QueryResponse> GetLobbiesAsync()
         {
