@@ -133,6 +133,7 @@ namespace XRMultiplayer
                 catch (Exception e)
                 {
                     Utils.Log($"{k_DebugPrepend}Coordinator error: {e.Message}", 1);
+                    PlayerHudNotification.Instance.ShowText($"Failed to auto-join lobby.");
                     return await CreateLobby(); // Fallback to direct creation
                 }
             }
