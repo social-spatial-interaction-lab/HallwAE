@@ -4,14 +4,8 @@ use serde::{Deserialize, Serialize};
 pub struct LobbyInfo {
     pub lobby_id: String,
     pub join_code: String,
-    pub player_count: u32,
-    pub max_players: u32,
-}
-
-#[derive(Deserialize)]
-pub struct QuickJoinRequest {
-    pub build_id: String,
-    pub max_players: u32,
+    pub player_count: i32,
+    pub max_players: i32,
 }
 
 #[derive(Serialize)]
@@ -26,6 +20,6 @@ pub struct QuickJoinResponse {
 pub struct RegisterLobbyRequest {
     pub lobby_id: String,
     pub join_code: String,
-    pub max_players: u32,
+    pub max_players: i32,
     pub creation_token: u64,
-} 
+}

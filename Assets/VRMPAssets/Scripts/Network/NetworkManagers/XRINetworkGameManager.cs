@@ -118,6 +118,9 @@ namespace XRMultiplayer
         public bool autoConnectOnLobbyJoin { get => m_AutoConnectOnLobbyJoin; }
         [SerializeField] bool m_AutoConnectOnLobbyJoin = true;
 
+        [Tooltip("If true, will automatically try to join or create a lobby when the game starts")]
+        public bool autoJoinOnAwake = true;
+
         /// <summary>
         /// Flag for updating positional voice chat.
         /// </summary>
@@ -220,6 +223,19 @@ namespace XRMultiplayer
             {
                 // Update connection state.
                 m_ConnectionState.Value = ConnectionState.Authenticated;
+                if (autoJoinOnAwake)
+                {
+                    try
+                    {
+                        await m_LobbyManager.QuickJoinLobby();
+                    }
+                    catch (Exception e)
+                    {
+                        Utils.Log($"{k_DebugPrepend}Failed to auto-join lobby: {e.Message}", 1);
+                        m_LobbyManager.OnLobbyFailed?.Invoke("Failed to auto-join lobby");
+                        PlayerHudNotification.Instance.ShowText($"Failed to auto-join lobby.");
+                    }
+                }
             }
         }
 

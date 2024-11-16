@@ -68,9 +68,6 @@ namespace XRMultiplayer
 
         private ulong? m_CreationToken = null;
 
-        [Tooltip("If true, will automatically try to join or create a lobby when the game starts")]
-        public bool autoJoinOnStart = true;
-
         /// <summary>
         /// See <see cref="MonoBehaviour"/>.
         /// </summary>
@@ -85,23 +82,6 @@ namespace XRMultiplayer
             s_HideEditorInLobbies = hideEditorFromLobby;
         }
 
-        private async void Start()
-        {
-            if (autoJoinOnStart)
-            {
-                try 
-                {
-                    m_Status.Value = "Auto-joining lobby...";
-                    await QuickJoinLobby();
-                }
-                catch (Exception e)
-                {
-                    Utils.Log($"{k_DebugPrepend}Failed to auto-join lobby: {e.Message}", 1);
-                    OnLobbyFailed?.Invoke("Failed to auto-join lobby");
-                }
-            }
-        }
-
         /// <summary>
         /// Quick Join Function will try and find any lobbies via QuickJoinLobbyAsync().
         /// If no lobbies are found then a new lobby is created.
@@ -111,22 +91,16 @@ namespace XRMultiplayer
         {
             m_Status.Value = "Checking For Existing Lobbies via Coordinator";
             Utils.Log($"{k_DebugPrepend}{m_Status.Value}");
-            
+
             while (true) // Will retry if needed
             {
-                try 
+                try
                 {
-                    var request = new
-                    {
-                        build_id = Application.version,
-                        max_players = XRINetworkGameManager.maxPlayers
-                    };
-                    
                     var response = await m_HttpClient.PostAsync(
                         $"{k_CoordinatorUrl}/quick_join",
-                        new StringContent(JsonUtility.ToJson(request), Encoding.UTF8, "application/json")
+                        new StringContent("", Encoding.UTF8, "application/json")
                     );
-                    
+
                     var coordinatorResponse = JsonUtility.FromJson<QuickJoinResponse>(
                         await response.Content.ReadAsStringAsync()
                     );
@@ -150,7 +124,7 @@ namespace XRMultiplayer
                             return lobby;
                         }
                     }
-                    
+
                     // If we get here, either someone else is creating a lobby or our join failed
                     // Wait a bit and retry
                     await Task.Delay(1000);
@@ -178,9 +152,13 @@ namespace XRMultiplayer
                     creation_token = m_CreationToken.Value
                 };
 
-                await m_HttpClient.PostAsync(
+                var response = await m_HttpClient.PostAsync(
                     $"{k_CoordinatorUrl}/register_lobby",
-                    new StringContent(JsonUtility.ToJson(request), Encoding.UTF8, "application/json")
+                    new StringContent(
+                        JsonUtility.ToJson(request),
+                        Encoding.UTF8,
+                        "application/json"
+                    )
                 );
             }
             catch (Exception e)
