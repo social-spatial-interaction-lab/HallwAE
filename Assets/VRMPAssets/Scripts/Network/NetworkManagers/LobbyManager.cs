@@ -145,7 +145,7 @@ namespace XRMultiplayer
 
             try
             {
-                var request = new
+                var request = new RegisterLobbyRequest
                 {
                     lobby_id = lobby.Id,
                     join_code = lobby.Data[k_JoinCodeKeyIdentifier].Value,
@@ -563,6 +563,15 @@ namespace XRMultiplayer
         public string lobby_id;
         public string join_code;
         public bool should_create;
+        public ulong creation_token;
+    }
+
+    [Serializable]
+    public class RegisterLobbyRequest
+    {
+        public string lobby_id;
+        public string join_code;
+        public int max_players;
         public ulong creation_token;
     }
 }
