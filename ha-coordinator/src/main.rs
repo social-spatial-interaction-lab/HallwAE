@@ -159,7 +159,6 @@ async fn main() -> std::io::Result<()> {
     });
 
     info!("State initialized");
-    info!("Binding to 0.0.0.0:8111");
 
     HttpServer::new(move || {
         App::new()
@@ -168,7 +167,7 @@ async fn main() -> std::io::Result<()> {
             .route("/register_lobby", web::post().to(register_lobby))
             .route("/unregister_lobby/{lobby_id}", web::delete().to(unregister_lobby))
     })
-    .bind("0.0.0.0:8111")?
+    .bind("0.0.0.0:8080")?
     .run()
     .await
 }

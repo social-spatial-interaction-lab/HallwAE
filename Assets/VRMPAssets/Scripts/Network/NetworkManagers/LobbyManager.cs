@@ -63,7 +63,7 @@ namespace XRMultiplayer
 
         const string k_DebugPrepend = "<color=#EC0CFA>[Lobby Manager]</color> ";
 
-        private const string k_CoordinatorUrl = "http://192.168.0.27:8111";
+        private const string k_CoordinatorUrl = "https://ha-coordinator.fly.dev";
         private readonly HttpClient m_HttpClient = new HttpClient();
 
         private ulong m_CreationToken = 0;
