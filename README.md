@@ -20,3 +20,4 @@ git add -A
 
 ## References
 - Here is the guide to initialize a unity + git project: https://github.com/orgs/community/discussions/56071
+- Unity Lobby Service: https://docs.unity3d.com/Packages/com.unity.services.lobby@1.2/api/Unity.Services.Lobbies.Models.Lobby.html
