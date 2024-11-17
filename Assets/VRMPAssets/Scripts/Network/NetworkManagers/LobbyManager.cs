@@ -465,6 +465,7 @@ namespace XRMultiplayer
                         string lobbyId = m_ConnectedLobby.Id; // Store ID before nulling the lobby
                         await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
                         await UnregisterLobby(lobbyId);
+                        Utils.Log($"{k_DebugPrepend}Unregistered lobby {lobbyId}");
                         m_ConnectedLobby = null;
                     }
                     else
