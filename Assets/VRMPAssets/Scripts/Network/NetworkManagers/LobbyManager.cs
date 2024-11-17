@@ -115,14 +115,17 @@ namespace XRMultiplayer
                         }
                         return lobby;
                     }
-                    else if (coordinatorResponse.join_code != null)
+                    else if (coordinatorResponse.lobby_id != null)
                     {
-                        // Join existing lobby
-                        var lobby = await JoinLobby(null, coordinatorResponse.join_code);
+                        // Try to join existing lobby
+                        var lobby = await JoinLobby(coordinatorResponse.lobby_id);
                         if (lobby != null)
                         {
                             return lobby;
                         }
+                        await UnregisterLobby(coordinatorResponse.lobby_id);
+                        Utils.Log($"{k_DebugPrepend}Lobby not found, unregistered and retrying", 1);
+                        continue;
                     }
 
                     // If we get here, either someone else is creating a lobby or our join failed
@@ -178,12 +181,12 @@ namespace XRMultiplayer
         /// <param name="lobby">Lobby to join.</param>
         /// <param name="roomCode">Lobby Code to join with.</param>
         /// <returns>Returns the Lobby.</returns>
-        public async Task<Lobby> JoinLobby(Lobby lobby = null, string roomCode = null)
+        public async Task<Lobby> JoinLobby(string lobbyId = null, string roomCode = null)
         {
             try
             {
                 // If Lobby is null, then get the new lobby based on room code
-                lobby = await GetLobby(lobby, roomCode);
+                var lobby = await GetLobby(lobbyId, roomCode);
                 await SetupRelay(lobby);
                 ConnectedToLobby(lobby);
 
@@ -333,7 +336,7 @@ namespace XRMultiplayer
         /// <param name="lobby">Lobby to join.</param>
         /// <param name="roomCode">Lobby Code to join with.</param>
         /// <returns>Returns the Lobby.</returns>
-        async Task<Lobby> GetLobby(Lobby lobby = null, string roomCode = null)
+        async Task<Lobby> GetLobby(string lobbyId = null, string roomCode = null)
         {
             if (roomCode != null)
             {
@@ -341,11 +344,11 @@ namespace XRMultiplayer
                 Utils.Log($"{k_DebugPrepend} Getting lobby via Code: {roomCode}");
                 return await LobbyService.Instance.JoinLobbyByCodeAsync(roomCode);
             }
-            else if (lobby != null)
+            else if (lobbyId != null)
             {
                 // RATE LIMIT: 2 request per 6 seconds
-                Utils.Log($"{k_DebugPrepend} Getting lobby via Lobby Id: {lobby.Id}");
-                return await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id);
+                Utils.Log($"{k_DebugPrepend} Getting lobby via Lobby Id: {lobbyId}");
+                return await LobbyService.Instance.JoinLobbyByIdAsync(lobbyId);
             }
             else
             {

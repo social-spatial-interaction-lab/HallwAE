@@ -443,7 +443,7 @@ namespace XRMultiplayer
             Utils.Log($"{k_DebugPrepend}Joining specific Lobby: {lobby.Name}.");
             if (await AbleToConnect())
             {
-                ConnectToLobby(await m_LobbyManager.JoinLobby(lobby: lobby));
+                ConnectToLobby(await m_LobbyManager.JoinLobby(lobbyId: lobby.Id));
             }
         }
 
