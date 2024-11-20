@@ -261,7 +261,7 @@ PlayerSettings:
   clonedFromGUID: f9aa94d3cea2f4d49b4b8ea6ba3f701b
   templatePackageId: com.unity.template.vr-multiplayer@2.0.4
   templateDefaultScene: Assets/Scenes/SampleScene.unity
-  useCustomMainManifest: 0
+  useCustomMainManifest: 1
   useCustomLauncherManifest: 0
   useCustomMainGradleTemplate: 0
   useCustomLauncherGradleManifest: 0
