@@ -162,6 +162,8 @@ namespace XRMultiplayer
         /// </summary>
         protected Vector3 m_PrevHeadPos;
 
+        private NetworkVariable<Vector3> m_SpawnOffset = new(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
         protected void Awake()
         {
             m_VoiceChat = FindFirstObjectByType<VoiceChatManager>();
@@ -211,9 +213,16 @@ namespace XRMultiplayer
             if (!IsOwner) return;
 
             // Set transforms to be replicated with ClientNetworkTransforms
-            leftHand.SetPositionAndRotation(m_LeftHandOrigin.position, m_LeftHandOrigin.rotation);
-            rightHand.SetPositionAndRotation(m_RightHandOrigin.position, m_RightHandOrigin.rotation);
-            head.SetPositionAndRotation(m_HeadOrigin.position, m_HeadOrigin.rotation);
+            // Apply spawn offset to the networked positions
+            leftHand.SetPositionAndRotation(
+                m_LeftHandOrigin.position + m_SpawnOffset.Value, 
+                m_LeftHandOrigin.rotation);
+            rightHand.SetPositionAndRotation(
+                m_RightHandOrigin.position + m_SpawnOffset.Value, 
+                m_RightHandOrigin.rotation);
+            head.SetPositionAndRotation(
+                m_HeadOrigin.position + m_SpawnOffset.Value, 
+                m_HeadOrigin.rotation);
         }
 
         ///<inheritdoc/>
@@ -244,15 +253,19 @@ namespace XRMultiplayer
             base.OnNetworkSpawn();
             if (IsOwner)
             {
-                // Set Local Player.
+                // Set Local Player
                 LocalPlayer = this;
                 XRINetworkGameManager.Instance.LocalPlayerConnected(NetworkObject.OwnerClientId);
 
-                // Get Origin and set head.
+                // Get Origin and set head
                 m_XROrigin = FindFirstObjectByType<XROrigin>();
                 if (m_XROrigin != null)
                 {
                     m_HeadOrigin = m_XROrigin.Camera.transform;
+                    
+                    Vector3 targetSpawnPosition = XRINetworkGameManager.Instance.GetSimpleSpawnPosition();
+                    
+                    m_SpawnOffset.Value = targetSpawnPosition - m_XROrigin.transform.position;
                 }
                 else
                 {
@@ -444,6 +457,15 @@ namespace XRMultiplayer
                 else
                     m_VivoxParticipant.UnmutePlayerLocally();
             }
+        }
+
+        public Vector3 GetCurrentPlayerPosition()
+        {
+            if (IsOwner)
+            {
+                return m_HeadOrigin.position + m_SpawnOffset.Value;
+            }
+            return head.position; // For non-owner players, use the networked position
         }
     }
 }

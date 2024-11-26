@@ -170,6 +170,10 @@ namespace XRMultiplayer
 
         const string k_DebugPrepend = "<color=#FAC00C>[Network Game Manager]</color> ";
 
+        [Header("Spawn Configuration")]
+        [Tooltip("Distance from average player position to spawn new players")]
+        public float spawnDistance = 2f;
+
         /// <summary>
         /// See <see cref="MonoBehaviour"/>.
         /// </summary>
@@ -669,6 +673,41 @@ namespace XRMultiplayer
             }
             Utils.Log($"{k_DebugPrepend}Disconnected from Game.");
             return fullyDisconnected;
+        }
+
+        // Simple version that only considers the 1 to 1 interaction
+        public Vector3 GetSimpleSpawnPosition()
+        {
+            XRINetworkPlayer[] existingPlayers = FindObjectsByType<XRINetworkPlayer>(FindObjectsSortMode.None);
+            
+            // If no players exist, spawn at origin
+            if (existingPlayers.Length <= 1)
+            {
+                return Vector3.zero;
+            }
+
+            // Find the first active player that isn't the local player
+            foreach (var player in existingPlayers)
+            {
+                if (player != null && player.isActiveAndEnabled && !player.IsOwner)
+                {
+                    Vector3 firstPlayerPos = player.GetCurrentPlayerPosition();
+                    
+                    // Generate a small random angle offset (-40 to 40 degrees)
+                    float randomAngleOffset = UnityEngine.Random.Range(-40f, 40f);
+                    float radians = (180f + randomAngleOffset) * Mathf.Deg2Rad; // 180 degrees = facing the player
+
+                    // Calculate spawn position in front of the first player
+                    return firstPlayerPos + new Vector3(
+                        Mathf.Sin(radians) * spawnDistance,
+                        0f,
+                        Mathf.Cos(radians) * spawnDistance
+                    );
+                }
+            }
+
+            // Fallback to origin if no valid player found
+            return Vector3.zero;
         }
     }
 }
