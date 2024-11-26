@@ -49,6 +49,10 @@ namespace XRMultiplayer
 
         bool m_IsFocusedOn = false;
 
+        [Header("Position Settings")]
+        [SerializeField] float heightOffset = 0.5f; // Height above player's head
+        [SerializeField] Transform targetTransform; // Reference to player's head transform
+
         private void Awake()
         {
             m_Camera = Camera.main;
@@ -56,6 +60,18 @@ namespace XRMultiplayer
 
         void LateUpdate()
         {
+            // Skip updates for local player
+            if (m_Player != null && m_Player.IsOwner)
+                return;
+
+            // Update position to follow player
+            if (m_Player != null && targetTransform != null)
+            {
+                Vector3 targetPosition = targetTransform.position;
+                targetPosition.y += heightOffset;
+                transform.position = targetPosition;
+            }
+
             UpdateRotation();
             UpdateMinimizedState();
         }
@@ -73,7 +89,16 @@ namespace XRMultiplayer
         {
             m_PlayerId = player.OwnerClientId;
             m_Player = player;
+            targetTransform = player.head;
 
+            // Hide name tag if this is the local player
+            if (player.IsOwner)
+            {
+                m_GameObjectToHide.SetActive(false);
+                return;  // Skip the rest of setup for local player
+            }
+
+            // Only setup the rest for remote players
             UpdateName(player.playerName);
             m_ColoredImage.color = m_Player.playerColor;
 

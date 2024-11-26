@@ -692,17 +692,24 @@ namespace XRMultiplayer
                 if (player != null && player.isActiveAndEnabled && !player.IsOwner)
                 {
                     Vector3 firstPlayerPos = player.GetCurrentPlayerPosition();
+                    Quaternion firstPlayerRot = player.head.rotation; // Get player's head rotation
                     
-                    // Generate a small random angle offset (-40 to 40 degrees)
-                    float randomAngleOffset = UnityEngine.Random.Range(-40f, 40f);
-                    float radians = (180f + randomAngleOffset) * Mathf.Deg2Rad; // 180 degrees = facing the player
+                    // Get forward direction from the player's head rotation
+                    Vector3 forwardDir = firstPlayerRot.eulerAngles;
+                    forwardDir.x = 0; // Zero out pitch (up/down rotation)
+                    forwardDir.z = 0; // Zero out roll
+                    
+                    // Convert back to quaternion and get forward vector
+                    Vector3 playerForward = Quaternion.Euler(forwardDir) * Vector3.forward;
+
+                    // Generate a small random angle offset (-30 to 30 degrees)
+                    float randomAngleOffset = UnityEngine.Random.Range(-30f, 30f);
+                    
+                    // Apply the random rotation to the forward direction
+                    Vector3 spawnDir = Quaternion.Euler(0, randomAngleOffset, 0) * playerForward;
 
                     // Calculate spawn position in front of the first player
-                    return firstPlayerPos + new Vector3(
-                        Mathf.Sin(radians) * spawnDistance,
-                        0f,
-                        Mathf.Cos(radians) * spawnDistance
-                    );
+                    return firstPlayerPos + (spawnDir * spawnDistance);
                 }
             }
 
