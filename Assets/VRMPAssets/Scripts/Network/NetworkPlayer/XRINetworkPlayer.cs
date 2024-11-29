@@ -275,7 +275,13 @@ namespace XRMultiplayer
                     // Calculate and set the position offset
                     m_SpawnOffset.Value = targetPosition - m_XROrigin.transform.position;
 
-                    // Just use the target rotation directly
+                    if (!IsHost)
+                    {
+                        // For Player 2, rotate their XROrigin 180° so their "forward" faces Player 1
+                        m_XROrigin.transform.rotation = Quaternion.Euler(0, 180, 0);
+                    }
+
+                    // Set spawn rotation for both players
                     m_SpawnRotation.Value = targetRotation;
                 }
                 else

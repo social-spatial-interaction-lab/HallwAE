@@ -682,37 +682,28 @@ namespace XRMultiplayer
         // Find the host player that is fully spawned and ready
         private XRINetworkPlayer FindHostPlayer()
         {
-            float timeout = Time.time + 5f; // 5 second timeout
+            // Get all spawned players
+            var players = FindObjectsByType<XRINetworkPlayer>(FindObjectsSortMode.None);
             
-            while (Time.time < timeout)
+            // Get the host's client ID (should be the first connected client)
+            if (NetworkManager.Singleton.ConnectedClientsIds.Count == 0)
             {
-                // Get all spawned players
-                var players = FindObjectsByType<XRINetworkPlayer>(FindObjectsSortMode.None);
-                
-                // Get the host's client ID (should be the first connected client)
-                if (NetworkManager.Singleton.ConnectedClientsIds.Count == 0)
-                {
-                    Debug.LogWarning("No connected clients found");
-                    System.Threading.Thread.Sleep(100);
-                    continue;
-                }
-                
-                ulong hostClientId = NetworkManager.Singleton.ConnectedClientsIds[0];
-                
-                // Find the player owned by the host
-                var hostPlayer = players.FirstOrDefault(p => p.OwnerClientId == hostClientId && p.head != null);
-                
-                if (hostPlayer != null)
-                {
-                    Debug.Log($"Found spawned host player with ID {hostPlayer.OwnerClientId}");
-                    return hostPlayer;
-                }
-                
-                Debug.Log($"Host player (ID: {hostClientId}) not found or not spawned yet, found {players.Length} total players. Retrying...");
-                System.Threading.Thread.Sleep(100);
+                Debug.LogWarning("No connected clients found");
+                return null;
             }
             
-            Debug.LogWarning("Timed out waiting for host player");
+            ulong hostClientId = NetworkManager.Singleton.ConnectedClientsIds[0];
+            
+            // Find the player owned by the host
+            var hostPlayer = players.FirstOrDefault(p => p.OwnerClientId == hostClientId && p.head != null);
+            
+            if (hostPlayer != null)
+            {
+                Debug.Log($"Found spawned host player with ID {hostPlayer.OwnerClientId}");
+                return hostPlayer;
+            }
+            
+            Debug.Log($"Host player (ID: {hostClientId}) not found or not spawned yet, found {players.Length} total players");
             return null;
         }
 
@@ -752,9 +743,12 @@ namespace XRMultiplayer
             Quaternion hostRotation = Quaternion.LookRotation(new Vector3(headForward.x, 0, headForward.z));
             Vector3 spawnPosition = headPosition + hostRotation * spawnOffset;
             
-            // Calculate rotation to face the host
+            // Calculate direction from spawn position to host
             Vector3 directionToHost = (headPosition - spawnPosition).normalized;
-            Quaternion spawnRotation = Quaternion.LookRotation(directionToHost);
+            
+            // Since Player 2's XROrigin is rotated 180°, we need to compensate for that
+            // Their "forward" is actually facing backwards, so we need to rotate their avatar 180° to make them face the host
+            Quaternion spawnRotation = Quaternion.LookRotation(directionToHost) * Quaternion.Euler(0, 180, 0);
 
             Debug.Log($"Calculated spawn transform at position {spawnPosition}, rotation {spawnRotation}");
             return (spawnPosition, spawnRotation);
