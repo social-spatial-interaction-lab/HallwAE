@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
@@ -175,11 +176,7 @@ namespace XRMultiplayer
         public float spawnDistance = 2f;
 
         // Keep track of the first player
-        private XRINetworkPlayer firstPlayer;
-
-        // Network variable to store spawn transforms for new players
-        private readonly NetworkVariable<Vector3> nextSpawnPosition = new(Vector3.zero);
-        private readonly NetworkVariable<Quaternion> nextSpawnRotation = new(Quaternion.identity);
+        private XRINetworkPlayer hostPlayer;
 
         /// <summary>
         /// See <see cref="MonoBehaviour"/>.
@@ -682,116 +679,85 @@ namespace XRMultiplayer
             return fullyDisconnected;
         }
 
-        // Simple version that only considers the 1 to 1 interaction
-        public (Vector3 position, Quaternion rotation) GetSimpleSpawnPosition()
+        // Find the host player that is fully spawned and ready
+        private XRINetworkPlayer FindHostPlayer()
         {
-            XRINetworkPlayer[] existingPlayers = FindObjectsByType<XRINetworkPlayer>(FindObjectsSortMode.None);
+            float timeout = Time.time + 5f; // 5 second timeout
             
-            // If no players exist, spawn at origin
-            if (existingPlayers.Length <= 1)
+            while (Time.time < timeout)
             {
-                return (Vector3.zero, Quaternion.identity);
-            }
-
-            // Find the first active player that isn't the local player
-            foreach (var player in existingPlayers)
-            {
-                if (player != null && player.isActiveAndEnabled && !player.IsOwner)
+                // Get all spawned players
+                var players = FindObjectsByType<XRINetworkPlayer>(FindObjectsSortMode.None);
+                
+                // Get the host's client ID (should be the first connected client)
+                if (NetworkManager.Singleton.ConnectedClientsIds.Count == 0)
                 {
-                    Vector3 firstPlayerPos = player.GetCurrentPlayerPosition();
-                    Quaternion firstPlayerRot = player.head.rotation;
-                    
-                    // Get forward direction from the player's head rotation
-                    Vector3 forwardDir = firstPlayerRot.eulerAngles;
-                    forwardDir.x = 0; // Zero out pitch (up/down rotation)
-                    forwardDir.z = 0; // Zero out roll
-                    
-                    // Convert back to quaternion and get forward vector
-                    Quaternion flattenedRotation = Quaternion.Euler(forwardDir);
-                    Vector3 playerForward = flattenedRotation * Vector3.forward;
-
-                    // Generate a small random angle offset (-30 to 30 degrees)
-                    float randomAngleOffset = UnityEngine.Random.Range(-30f, 30f);
-                    
-                    // Apply the random rotation to the forward direction
-                    Vector3 spawnDir = Quaternion.Euler(0, randomAngleOffset, 0) * playerForward;
-                    
-                    // Calculate spawn position in front of the first player
-                    Vector3 spawnPosition = firstPlayerPos + (spawnDir * spawnDistance);
-                    
-                    // Calculate rotation to face the first player
-                    Quaternion spawnRotation = Quaternion.LookRotation(-spawnDir, Vector3.up);
-
-                    return (spawnPosition, spawnRotation);
+                    Debug.LogWarning("No connected clients found");
+                    System.Threading.Thread.Sleep(100);
+                    continue;
                 }
+                
+                ulong hostClientId = NetworkManager.Singleton.ConnectedClientsIds[0];
+                
+                // Find the player owned by the host
+                var hostPlayer = players.FirstOrDefault(p => p.OwnerClientId == hostClientId && p.head != null);
+                
+                if (hostPlayer != null)
+                {
+                    Debug.Log($"Found spawned host player with ID {hostPlayer.OwnerClientId}");
+                    return hostPlayer;
+                }
+                
+                Debug.Log($"Host player (ID: {hostClientId}) not found or not spawned yet, found {players.Length} total players. Retrying...");
+                System.Threading.Thread.Sleep(100);
             }
-
-            // Fallback to origin if no valid player found
-            return (Vector3.zero, Quaternion.identity);
-        }
-
-        // Called by the first player to set spawn position for next player
-        [ServerRpc(RequireOwnership = false)]
-        public void SetNextSpawnTransformServerRpc(Vector3 position, Quaternion rotation, ServerRpcParams serverRpcParams = default)
-        {
-            nextSpawnPosition.Value = position;
-            nextSpawnRotation.Value = rotation;
+            
+            Debug.LogWarning("Timed out waiting for host player");
+            return null;
         }
 
         // Get the spawn transform for a new player
-        public (Vector3 position, Quaternion rotation) GetSpawnTransform()
+        public (Vector3, Quaternion) GetSpawnTransform()
         {
-            // If this is the first player
-            if (firstPlayer == null)
+            if (m_LobbyManager.connectedLobby.Players.Count <= 1)
             {
-                firstPlayer = FindFirstObjectByType<XRINetworkPlayer>();
+                Debug.Log("First player spawning at default position");
+                return (Vector3.zero, Quaternion.identity);
+            }
+            
+            // For subsequent players, find the host and calculate spawn position
+            var hostPlayer = FindHostPlayer();
+            if (hostPlayer == null)
+            {
                 return (Vector3.zero, Quaternion.identity);
             }
 
-            return (nextSpawnPosition.Value, nextSpawnRotation.Value);
-        }
-
-        // Calculate next spawn position relative to the first player
-        public void CalculateNextSpawnTransform()
-        {
-            if (firstPlayer == null || !firstPlayer.IsOwner) return;
-
-            Vector3 firstPlayerPos = firstPlayer.GetCurrentPlayerPosition();
-            Quaternion firstPlayerRot = firstPlayer.head.rotation;
+            // Calculate spawn position relative to host's position and forward direction
+            var headPosition = hostPlayer.GetCurrentPlayerPosition();
+            var headForward = hostPlayer.head.forward;
             
-            // Get forward direction from the player's head rotation
-            Vector3 forwardDir = firstPlayerRot.eulerAngles;
-            forwardDir.x = 0; // Zero out pitch (up/down rotation)
-            forwardDir.z = 0; // Zero out roll
+            // Generate random angle between -30 and 30 degrees
+            float randomAngle = UnityEngine.Random.Range(-30f, 30f);
+            float angleInRadians = randomAngle * Mathf.Deg2Rad;
             
-            // Convert back to quaternion and get forward vector
-            Quaternion flattenedRotation = Quaternion.Euler(forwardDir);
-            Vector3 playerForward = flattenedRotation * Vector3.forward;
+            // Calculate spawn position 2 meters away at the random angle
+            float spawnDistance = 2f;
+            Vector3 spawnOffset = new Vector3(
+                Mathf.Sin(angleInRadians) * spawnDistance,
+                0f,
+                Mathf.Cos(angleInRadians) * spawnDistance
+            );
 
-            // Generate a small random angle offset (-30 to 30 degrees)
-            float randomAngleOffset = UnityEngine.Random.Range(-30f, 30f);
+            // Transform the offset relative to host's forward direction
+            Quaternion hostRotation = Quaternion.LookRotation(new Vector3(headForward.x, 0, headForward.z));
+            Vector3 spawnPosition = headPosition + hostRotation * spawnOffset;
             
-            // Apply the random rotation to the forward direction
-            Vector3 spawnDir = Quaternion.Euler(0, randomAngleOffset, 0) * playerForward;
-            
-            // Calculate spawn position in front of the first player
-            Vector3 spawnPosition = firstPlayerPos + (spawnDir * spawnDistance);
-            
-            // Calculate rotation to face the first player
-            Quaternion spawnRotation = Quaternion.LookRotation(-spawnDir, Vector3.up);
+            // Calculate rotation to face the host
+            Vector3 directionToHost = (headPosition - spawnPosition).normalized;
+            Quaternion spawnRotation = Quaternion.LookRotation(directionToHost);
 
-            // Set the next spawn transform
-            SetNextSpawnTransformServerRpc(spawnPosition, spawnRotation);
-        }
-
-        // Called when a new player connects
-        public void PlayerConnected(ulong clientId)
-        {
-            if (IsServer)
-            {
-                // Calculate next spawn position when we're notified of a new connection
-                CalculateNextSpawnTransform();
-            }
+            Debug.Log($"Calculated spawn transform at position {spawnPosition}, rotation {spawnRotation}");
+            return (spawnPosition, spawnRotation);
         }
     }
 }

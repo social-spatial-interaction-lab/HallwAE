@@ -73,3 +73,5 @@ crashlytics-build.properties
 
 # Temporary utmp folder
 .utmp/
+
+.DS_Store

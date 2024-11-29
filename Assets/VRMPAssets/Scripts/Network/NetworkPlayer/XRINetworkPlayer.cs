@@ -216,15 +216,15 @@ namespace XRMultiplayer
             // Set transforms to be replicated with ClientNetworkTransforms
             // Apply spawn offset to the networked positions and rotations
             Quaternion finalRotation = m_SpawnRotation.Value * m_HeadOrigin.rotation;
-            
+
             leftHand.SetPositionAndRotation(
                 m_LeftHandOrigin.position + m_SpawnOffset.Value,
                 m_SpawnRotation.Value * m_LeftHandOrigin.rotation);
-            
+
             rightHand.SetPositionAndRotation(
                 m_RightHandOrigin.position + m_SpawnOffset.Value,
                 m_SpawnRotation.Value * m_RightHandOrigin.rotation);
-            
+
             head.SetPositionAndRotation(
                 m_HeadOrigin.position + m_SpawnOffset.Value,
                 finalRotation);
@@ -256,6 +256,7 @@ namespace XRMultiplayer
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
+            Debug.Log($"OnNetworkSpawn - IsOwner: {IsOwner}, IsHost: {NetworkManager.Singleton.IsHost}, IsServer: {NetworkManager.Singleton.IsServer}");
             if (IsOwner)
             {
                 // Set Local Player
@@ -267,20 +268,15 @@ namespace XRMultiplayer
                 if (m_XROrigin != null)
                 {
                     m_HeadOrigin = m_XROrigin.Camera.transform;
-                    
+
+                    // Get spawn transform (will be calculated based on host player if we're not the first)
                     var (targetPosition, targetRotation) = XRINetworkGameManager.Instance.GetSpawnTransform();
-                    
+
                     // Calculate and set the position offset
                     m_SpawnOffset.Value = targetPosition - m_XROrigin.transform.position;
-                    
-                    // Calculate and set the rotation offset
-                    m_SpawnRotation.Value = targetRotation * Quaternion.Inverse(m_XROrigin.transform.rotation);
 
-                    // If we're the first player, start calculating spawn positions for others
-                    if (XRINetworkGameManager.Instance.IsServer)
-                    {
-                        XRINetworkGameManager.Instance.CalculateNextSpawnTransform();
-                    }
+                    // Just use the target rotation directly
+                    m_SpawnRotation.Value = targetRotation;
                 }
                 else
                 {
