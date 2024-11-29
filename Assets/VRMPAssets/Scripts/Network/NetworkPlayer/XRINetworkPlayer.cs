@@ -269,20 +269,15 @@ namespace XRMultiplayer
                 {
                     m_HeadOrigin = m_XROrigin.Camera.transform;
 
-                    // Get spawn transform (will be calculated based on host player if we're not the first)
-                    var (targetPosition, targetRotation) = XRINetworkGameManager.Instance.GetSpawnTransform();
-
-                    // Calculate and set the position offset
-                    m_SpawnOffset.Value = targetPosition - m_XROrigin.transform.position;
-
                     if (!IsHost)
                     {
-                        // For Player 2, rotate their XROrigin 180° so their "forward" faces Player 1
-                        m_XROrigin.transform.rotation = Quaternion.Euler(0, 180, 0);
+                        // Get spawn transform for Player 2's XROrigin
+                        var (xrPosition, xrRotation) = XRINetworkGameManager.Instance.GetSpawnTransform();
+                        
+                        // Position and rotate the XROrigin
+                        m_XROrigin.transform.position = xrPosition;
+                        m_XROrigin.transform.rotation = xrRotation;
                     }
-
-                    // Set spawn rotation for both players
-                    m_SpawnRotation.Value = targetRotation;
                 }
                 else
                 {

@@ -173,7 +173,7 @@ namespace XRMultiplayer
 
         [Header("Spawn Configuration")]
         [Tooltip("Distance from average player position to spawn new players")]
-        public float spawnDistance = 2f;
+        public float k_SpawnDistance = 2f;
 
         // Keep track of the first player
         private XRINetworkPlayer hostPlayer;
@@ -707,7 +707,7 @@ namespace XRMultiplayer
             return null;
         }
 
-        // Get the spawn transform for a new player
+        // Get the spawn transform for a new player's XROrigin
         public (Vector3, Quaternion) GetSpawnTransform()
         {
             if (m_LobbyManager.connectedLobby.Players.Count <= 1)
@@ -723,34 +723,30 @@ namespace XRMultiplayer
                 return (Vector3.zero, Quaternion.identity);
             }
 
-            // Calculate spawn position relative to host's position and forward direction
-            var headPosition = hostPlayer.GetCurrentPlayerPosition();
-            var headForward = hostPlayer.head.forward;
+            // Get host position at floor level
+            Vector3 hostPosition = hostPlayer.GetCurrentPlayerPosition();
+            hostPosition.y = 0f;
             
             // Generate random angle between -30 and 30 degrees
             float randomAngle = UnityEngine.Random.Range(-30f, 30f);
             float angleInRadians = randomAngle * Mathf.Deg2Rad;
             
-            // Calculate spawn position 2 meters away at the random angle
-            float spawnDistance = 2f;
+            // Calculate position using configured spawn distance at the random angle
             Vector3 spawnOffset = new Vector3(
-                Mathf.Sin(angleInRadians) * spawnDistance,
+                Mathf.Sin(angleInRadians) * k_SpawnDistance,
                 0f,
-                Mathf.Cos(angleInRadians) * spawnDistance
+                Mathf.Cos(angleInRadians) * k_SpawnDistance
             );
 
             // Transform the offset relative to host's forward direction
-            Quaternion hostRotation = Quaternion.LookRotation(new Vector3(headForward.x, 0, headForward.z));
-            Vector3 spawnPosition = headPosition + hostRotation * spawnOffset;
+            Vector3 hostForward = hostPlayer.head.forward;
+            Quaternion hostRotation = Quaternion.LookRotation(new Vector3(hostForward.x, 0, hostForward.z));
+            Vector3 spawnPosition = hostPosition + hostRotation * spawnOffset;
             
-            // Calculate direction from spawn position to host
-            Vector3 directionToHost = (headPosition - spawnPosition).normalized;
-            
-            // Since Player 2's XROrigin is rotated 180°, we need to compensate for that
-            // Their "forward" is actually facing backwards, so we need to rotate their avatar 180° to make them face the host
-            Quaternion spawnRotation = Quaternion.LookRotation(directionToHost) * Quaternion.Euler(0, 180, 0);
+            // Calculate XROrigin rotation (180 + spawnAngle degrees to face host)
+            Quaternion spawnRotation = Quaternion.Euler(0, 180 + randomAngle * Mathf.Rad2Deg, 0);
 
-            Debug.Log($"Calculated spawn transform at position {spawnPosition}, rotation {spawnRotation}");
+            Debug.Log($"Calculated XROrigin transform at position {spawnPosition}, rotation {spawnRotation.eulerAngles}");
             return (spawnPosition, spawnRotation);
         }
     }
