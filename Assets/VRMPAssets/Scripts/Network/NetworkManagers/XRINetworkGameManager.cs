@@ -174,6 +174,13 @@ namespace XRMultiplayer
         [Tooltip("Distance from average player position to spawn new players")]
         public float spawnDistance = 2f;
 
+        // Keep track of the first player
+        private XRINetworkPlayer firstPlayer;
+
+        // Network variable to store spawn transforms for new players
+        private readonly NetworkVariable<Vector3> nextSpawnPosition = new(Vector3.zero);
+        private readonly NetworkVariable<Quaternion> nextSpawnRotation = new(Quaternion.identity);
+
         /// <summary>
         /// See <see cref="MonoBehaviour"/>.
         /// </summary>
@@ -676,14 +683,14 @@ namespace XRMultiplayer
         }
 
         // Simple version that only considers the 1 to 1 interaction
-        public Vector3 GetSimpleSpawnPosition()
+        public (Vector3 position, Quaternion rotation) GetSimpleSpawnPosition()
         {
             XRINetworkPlayer[] existingPlayers = FindObjectsByType<XRINetworkPlayer>(FindObjectsSortMode.None);
             
             // If no players exist, spawn at origin
             if (existingPlayers.Length <= 1)
             {
-                return Vector3.zero;
+                return (Vector3.zero, Quaternion.identity);
             }
 
             // Find the first active player that isn't the local player
@@ -692,7 +699,7 @@ namespace XRMultiplayer
                 if (player != null && player.isActiveAndEnabled && !player.IsOwner)
                 {
                     Vector3 firstPlayerPos = player.GetCurrentPlayerPosition();
-                    Quaternion firstPlayerRot = player.head.rotation; // Get player's head rotation
+                    Quaternion firstPlayerRot = player.head.rotation;
                     
                     // Get forward direction from the player's head rotation
                     Vector3 forwardDir = firstPlayerRot.eulerAngles;
@@ -700,21 +707,91 @@ namespace XRMultiplayer
                     forwardDir.z = 0; // Zero out roll
                     
                     // Convert back to quaternion and get forward vector
-                    Vector3 playerForward = Quaternion.Euler(forwardDir) * Vector3.forward;
+                    Quaternion flattenedRotation = Quaternion.Euler(forwardDir);
+                    Vector3 playerForward = flattenedRotation * Vector3.forward;
 
                     // Generate a small random angle offset (-30 to 30 degrees)
                     float randomAngleOffset = UnityEngine.Random.Range(-30f, 30f);
                     
                     // Apply the random rotation to the forward direction
                     Vector3 spawnDir = Quaternion.Euler(0, randomAngleOffset, 0) * playerForward;
-
+                    
                     // Calculate spawn position in front of the first player
-                    return firstPlayerPos + (spawnDir * spawnDistance);
+                    Vector3 spawnPosition = firstPlayerPos + (spawnDir * spawnDistance);
+                    
+                    // Calculate rotation to face the first player
+                    Quaternion spawnRotation = Quaternion.LookRotation(-spawnDir, Vector3.up);
+
+                    return (spawnPosition, spawnRotation);
                 }
             }
 
             // Fallback to origin if no valid player found
-            return Vector3.zero;
+            return (Vector3.zero, Quaternion.identity);
+        }
+
+        // Called by the first player to set spawn position for next player
+        [ServerRpc(RequireOwnership = false)]
+        public void SetNextSpawnTransformServerRpc(Vector3 position, Quaternion rotation, ServerRpcParams serverRpcParams = default)
+        {
+            nextSpawnPosition.Value = position;
+            nextSpawnRotation.Value = rotation;
+        }
+
+        // Get the spawn transform for a new player
+        public (Vector3 position, Quaternion rotation) GetSpawnTransform()
+        {
+            // If this is the first player
+            if (firstPlayer == null)
+            {
+                firstPlayer = FindFirstObjectByType<XRINetworkPlayer>();
+                return (Vector3.zero, Quaternion.identity);
+            }
+
+            return (nextSpawnPosition.Value, nextSpawnRotation.Value);
+        }
+
+        // Calculate next spawn position relative to the first player
+        public void CalculateNextSpawnTransform()
+        {
+            if (firstPlayer == null || !firstPlayer.IsOwner) return;
+
+            Vector3 firstPlayerPos = firstPlayer.GetCurrentPlayerPosition();
+            Quaternion firstPlayerRot = firstPlayer.head.rotation;
+            
+            // Get forward direction from the player's head rotation
+            Vector3 forwardDir = firstPlayerRot.eulerAngles;
+            forwardDir.x = 0; // Zero out pitch (up/down rotation)
+            forwardDir.z = 0; // Zero out roll
+            
+            // Convert back to quaternion and get forward vector
+            Quaternion flattenedRotation = Quaternion.Euler(forwardDir);
+            Vector3 playerForward = flattenedRotation * Vector3.forward;
+
+            // Generate a small random angle offset (-30 to 30 degrees)
+            float randomAngleOffset = UnityEngine.Random.Range(-30f, 30f);
+            
+            // Apply the random rotation to the forward direction
+            Vector3 spawnDir = Quaternion.Euler(0, randomAngleOffset, 0) * playerForward;
+            
+            // Calculate spawn position in front of the first player
+            Vector3 spawnPosition = firstPlayerPos + (spawnDir * spawnDistance);
+            
+            // Calculate rotation to face the first player
+            Quaternion spawnRotation = Quaternion.LookRotation(-spawnDir, Vector3.up);
+
+            // Set the next spawn transform
+            SetNextSpawnTransformServerRpc(spawnPosition, spawnRotation);
+        }
+
+        // Called when a new player connects
+        public void PlayerConnected(ulong clientId)
+        {
+            if (IsServer)
+            {
+                // Calculate next spawn position when we're notified of a new connection
+                CalculateNextSpawnTransform();
+            }
         }
     }
 }

@@ -163,6 +163,7 @@ namespace XRMultiplayer
         protected Vector3 m_PrevHeadPos;
 
         private NetworkVariable<Vector3> m_SpawnOffset = new(Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private NetworkVariable<Quaternion> m_SpawnRotation = new(Quaternion.identity, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
         protected void Awake()
         {
@@ -213,16 +214,20 @@ namespace XRMultiplayer
             if (!IsOwner) return;
 
             // Set transforms to be replicated with ClientNetworkTransforms
-            // Apply spawn offset to the networked positions
+            // Apply spawn offset to the networked positions and rotations
+            Quaternion finalRotation = m_SpawnRotation.Value * m_HeadOrigin.rotation;
+            
             leftHand.SetPositionAndRotation(
-                m_LeftHandOrigin.position + m_SpawnOffset.Value, 
-                m_LeftHandOrigin.rotation);
+                m_LeftHandOrigin.position + m_SpawnOffset.Value,
+                m_SpawnRotation.Value * m_LeftHandOrigin.rotation);
+            
             rightHand.SetPositionAndRotation(
-                m_RightHandOrigin.position + m_SpawnOffset.Value, 
-                m_RightHandOrigin.rotation);
+                m_RightHandOrigin.position + m_SpawnOffset.Value,
+                m_SpawnRotation.Value * m_RightHandOrigin.rotation);
+            
             head.SetPositionAndRotation(
-                m_HeadOrigin.position + m_SpawnOffset.Value, 
-                m_HeadOrigin.rotation);
+                m_HeadOrigin.position + m_SpawnOffset.Value,
+                finalRotation);
         }
 
         ///<inheritdoc/>
@@ -263,9 +268,19 @@ namespace XRMultiplayer
                 {
                     m_HeadOrigin = m_XROrigin.Camera.transform;
                     
-                    Vector3 targetSpawnPosition = XRINetworkGameManager.Instance.GetSimpleSpawnPosition();
+                    var (targetPosition, targetRotation) = XRINetworkGameManager.Instance.GetSpawnTransform();
                     
-                    m_SpawnOffset.Value = targetSpawnPosition - m_XROrigin.transform.position;
+                    // Calculate and set the position offset
+                    m_SpawnOffset.Value = targetPosition - m_XROrigin.transform.position;
+                    
+                    // Calculate and set the rotation offset
+                    m_SpawnRotation.Value = targetRotation * Quaternion.Inverse(m_XROrigin.transform.rotation);
+
+                    // If we're the first player, start calculating spawn positions for others
+                    if (XRINetworkGameManager.Instance.IsServer)
+                    {
+                        XRINetworkGameManager.Instance.CalculateNextSpawnTransform();
+                    }
                 }
                 else
                 {
