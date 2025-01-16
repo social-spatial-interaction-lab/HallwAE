@@ -743,8 +743,10 @@ namespace XRMultiplayer
             Quaternion hostRotation = Quaternion.LookRotation(new Vector3(hostForward.x, 0, hostForward.z));
             Vector3 spawnPosition = hostPosition + hostRotation * spawnOffset;
             
-            // Calculate XROrigin rotation (180 + spawnAngle degrees to face host)
-            Quaternion spawnRotation = Quaternion.Euler(0, 180 + randomAngle * Mathf.Rad2Deg, 0);
+            // Calculate rotation to face the host, taking into account host's rotation
+            Vector3 directionToHost = hostPosition - spawnPosition;
+            Quaternion baseRotation = Quaternion.LookRotation(directionToHost.normalized, Vector3.up);
+            Quaternion spawnRotation = baseRotation * Quaternion.Euler(0, randomAngle, 0);
 
             Debug.Log($"Calculated XROrigin transform at position {spawnPosition}, rotation {spawnRotation.eulerAngles}");
             return (spawnPosition, spawnRotation);
