@@ -1,6 +1,10 @@
-# UnityMultiplayerSample
+# HallwAE
 
-Currently it just the official sample for VR Multiplarer in Unity
+*What if you could have those spontaneous hallway conversations with colleagues or friends- but remotely?*
+
+AR can do this. It has an outside shot of being a socially acceptable use of AR within settings where people do this.
+
+*Based on the official sample for VR Multiplarer in Unity*
 
 You can checkout the tutorial in the project, or the quick start guide to know more about this sample:
 [VR Multiplayer Template Quick Start Guide | VR Multiplayer | 2.0.4](https://docs.unity3d.com/Packages/com.unity.template.vr-multiplayer@2.0/manual/index.html) 
