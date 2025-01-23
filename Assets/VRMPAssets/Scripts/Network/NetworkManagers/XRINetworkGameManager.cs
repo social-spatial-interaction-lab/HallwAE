@@ -710,6 +710,7 @@ namespace XRMultiplayer
         // Get the spawn transform for a new player's XROrigin
         public (Vector3, Quaternion) GetSpawnTransform()
         {
+            Debug.Log($"Getting spawn transform for player {NetworkManager.Singleton.LocalClientId}");
             if (m_LobbyManager.connectedLobby.Players.Count <= 1)
             {
                 Debug.Log("First player spawning at default position");
