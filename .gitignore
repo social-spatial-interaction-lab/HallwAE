@@ -75,3 +75,4 @@ crashlytics-build.properties
 .utmp/
 
 .DS_Store
+TempAssembly.dll
