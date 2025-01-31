@@ -5,6 +5,7 @@ namespace XRMultiplayer
 {
     public class CharacterHeightResetter : MonoBehaviour
     {
+
         [SerializeField] Vector2 m_MinMaxHeight = new Vector2(0.0f, 0.5f);
         // XR origin should be fixed to 0 to match with tracking origin mode==floor in AR
         [SerializeField] float m_ResetHeight = 0.0f;
