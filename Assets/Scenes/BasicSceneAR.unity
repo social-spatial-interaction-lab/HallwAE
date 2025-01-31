@@ -8785,8 +8785,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e69981d55eaca4fbe805f8ba78524fd7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_MinMaxHeight: {x: 1, y: 2}
---- !u!114 &9205069178121381598
+  m_MinMaxHeight: {x: 0, y: 0.5}
+  m_ResetHeight: 0
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

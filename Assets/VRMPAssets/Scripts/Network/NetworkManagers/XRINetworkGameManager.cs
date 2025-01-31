@@ -723,9 +723,9 @@ namespace XRMultiplayer
                 return (Vector3.zero, Quaternion.identity);
             }
 
-            // Get host position at floor level
+            // Get host position; spawn position will have the same y value with the host
             Vector3 hostPosition = hostPlayer.GetCurrentPlayerPosition();
-            hostPosition.y = 0f;
+
             
             // Generate random angle between -30 and 30 degrees
             float randomAngle = UnityEngine.Random.Range(-30f, 30f);
