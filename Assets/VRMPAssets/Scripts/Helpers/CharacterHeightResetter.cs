@@ -6,6 +6,7 @@ namespace XRMultiplayer
     public class CharacterHeightResetter : MonoBehaviour
     {
         [SerializeField] Vector2 m_MinMaxHeight = new Vector2(1.0f, 2.0f);
+        [SerializeField] float m_ResetHeight = 1.2f;
         TeleportationProvider m_TeleportationProvider;
 
         private void Start()
@@ -25,7 +26,7 @@ namespace XRMultiplayer
         void ResetHeight()
         {
             Vector3 newPosition = transform.position;  // Get current position
-            newPosition.y = Mathf.Clamp(newPosition.y, m_MinMaxHeight.x, m_MinMaxHeight.y);        // Only modify Y value (height)
+            newPosition.y = m_ResetHeight;        // Only modify Y value (height)
 
             TeleportRequest teleportRequest = new()
             {
