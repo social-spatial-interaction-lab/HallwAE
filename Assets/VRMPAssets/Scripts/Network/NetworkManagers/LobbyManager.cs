@@ -63,7 +63,7 @@ namespace XRMultiplayer
 
         const string k_DebugPrepend = "<color=#EC0CFA>[Lobby Manager]</color> ";
 
-        private const string k_CoordinatorUrl = "https://ha-coordinator.fly.dev";
+        private const string k_CoordinatorUrl = "https://hallwae-coordinator.netlify.app/api/lobbies";
         private readonly HttpClient m_HttpClient = new HttpClient();
 
         private ulong m_CreationToken = 0;
@@ -471,6 +471,8 @@ namespace XRMultiplayer
                         // Delete Lobby if current owner
                         Utils.Log($"{k_DebugPrepend}Owner of lobby, shutting down.");
                         await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
+                        // Notify coordinator that the lobby is being deleted
+                        await NotifyExit(lobbyId, playerId);
                         await UnregisterLobby(lobbyId);
                         Utils.Log($"{k_DebugPrepend}Unregistered lobby {lobbyId}");
                         m_ConnectedLobby = null;
@@ -479,9 +481,10 @@ namespace XRMultiplayer
                     {
                         //Remove from lobby
                         await RemoveFromLobby(playerId);
+                        // Notify coordinator that the player is exiting the lobby
+                        await NotifyExit(lobbyId, playerId);
                     }
                     
-                    await NotifyExit(lobbyId, playerId);
                     return true;
                 }
             }
@@ -521,14 +524,9 @@ namespace XRMultiplayer
         {
             try
             {
-                var request = new UnregisterLobbyRequest
-                {
-                    player_id = AuthenticationService.Instance.PlayerId
-                };
-
+                var playerId = AuthenticationService.Instance.PlayerId;
                 var response = await m_HttpClient.DeleteAsync(
-                    $"{k_CoordinatorUrl}/unregister/{lobbyId}",
-                    new StringContent(JsonUtility.ToJson(request), Encoding.UTF8, "application/json")
+                    $"{k_CoordinatorUrl}/unregister/{lobbyId}/{playerId}"
                 );
                 if (!response.IsSuccessStatusCode)
                 {
@@ -545,14 +543,8 @@ namespace XRMultiplayer
         {
             try
             {
-                var request = new ExitRequest
-                {
-                    player_id = playerId
-                };
-
                 var response = await m_HttpClient.DeleteAsync(
-                    $"{k_CoordinatorUrl}/exit/{lobbyId}",
-                    new StringContent(JsonUtility.ToJson(request), Encoding.UTF8, "application/json")
+                    $"{k_CoordinatorUrl}/exit/{lobbyId}/{playerId}"
                 );
                 if (!response.IsSuccessStatusCode)
                 {
@@ -637,17 +629,5 @@ namespace XRMultiplayer
         public string player_id;
         public int max_players;
         public ulong creation_token;
-    }
-
-    [Serializable]
-    public class UnregisterLobbyRequest
-    {
-        public string player_id;
-    }
-
-    [Serializable]
-    public class ExitRequest
-    {
-        public string player_id;
     }
 }
