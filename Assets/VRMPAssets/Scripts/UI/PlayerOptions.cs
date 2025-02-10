@@ -9,6 +9,7 @@ using UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion.Turning;
 using UnityEngine.Android;
+using System.Collections;
 
 namespace XRMultiplayer
 {
@@ -200,12 +201,16 @@ namespace XRMultiplayer
             XRINetworkGameManager.Instance.QuickJoinLobby();
         }
 
-        public void QuitGame()
+        public async void QuitGame()
         {
+            if (XRINetworkGameManager.Connected.Value)
+            {
+                await XRINetworkGameManager.Instance.DisconnectAsync();
+            }
 #if UNITY_EDITOR
-            EditorApplication.isPlaying = false;
+                EditorApplication.isPlaying = false;
 #else
-            Application.Quit();
+                Application.Quit();
 #endif
         }
 
