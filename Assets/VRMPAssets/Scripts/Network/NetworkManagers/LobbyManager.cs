@@ -63,7 +63,7 @@ namespace XRMultiplayer
 
         const string k_DebugPrepend = "<color=#EC0CFA>[Lobby Manager]</color> ";
 
-        private const string k_CoordinatorUrl = "https://ha-coordinator.fly.dev";
+        private const string k_CoordinatorUrl = "https://hallwae-coordinator.netlify.app/api/lobbies";
         private readonly HttpClient m_HttpClient = new HttpClient();
 
         private ulong m_CreationToken = 0;
@@ -96,9 +96,14 @@ namespace XRMultiplayer
             {
                 try
                 {
+                    var request = new QuickJoinRequest
+                    {
+                        player_id = AuthenticationService.Instance.PlayerId
+                    };
+
                     var response = await m_HttpClient.PostAsync(
                         $"{k_CoordinatorUrl}/quick_join",
-                        new StringContent("", Encoding.UTF8, "application/json")
+                        new StringContent(JsonUtility.ToJson(request), Encoding.UTF8, "application/json")
                     );
 
                     var coordinatorResponse = JsonUtility.FromJson<QuickJoinResponse>(
@@ -150,14 +155,13 @@ namespace XRMultiplayer
             {
                 var request = new RegisterLobbyRequest
                 {
-                    lobby_id = lobby.Id,
-                    join_code = lobby.Data[k_JoinCodeKeyIdentifier].Value,
+                    player_id = AuthenticationService.Instance.PlayerId,
                     max_players = XRINetworkGameManager.maxPlayers,
                     creation_token = m_CreationToken
                 };
 
                 var response = await m_HttpClient.PostAsync(
-                    $"{k_CoordinatorUrl}/register_lobby",
+                    $"{k_CoordinatorUrl}/register/{lobby.Id}",
                     new StringContent(
                         JsonUtility.ToJson(request),
                         Encoding.UTF8,
@@ -460,13 +464,15 @@ namespace XRMultiplayer
             {
                 if (m_ConnectedLobby != null)
                 {
+                    string lobbyId = m_ConnectedLobby.Id; // Store ID before any operations
                     // Check if Lobby Host is current Player
                     if (m_ConnectedLobby.HostId == playerId)
                     {
                         // Delete Lobby if current owner
                         Utils.Log($"{k_DebugPrepend}Owner of lobby, shutting down.");
-                        string lobbyId = m_ConnectedLobby.Id; // Store ID before nulling the lobby
                         await LobbyService.Instance.DeleteLobbyAsync(lobbyId);
+                        // Notify coordinator that the lobby is being deleted
+                        await NotifyExit(lobbyId, playerId);
                         await UnregisterLobby(lobbyId);
                         Utils.Log($"{k_DebugPrepend}Unregistered lobby {lobbyId}");
                         m_ConnectedLobby = null;
@@ -475,7 +481,10 @@ namespace XRMultiplayer
                     {
                         //Remove from lobby
                         await RemoveFromLobby(playerId);
+                        // Notify coordinator that the player is exiting the lobby
+                        await NotifyExit(lobbyId, playerId);
                     }
+                    
                     return true;
                 }
             }
@@ -515,7 +524,10 @@ namespace XRMultiplayer
         {
             try
             {
-                var response = await m_HttpClient.DeleteAsync($"{k_CoordinatorUrl}/unregister_lobby/{lobbyId}");
+                var playerId = AuthenticationService.Instance.PlayerId;
+                var response = await m_HttpClient.DeleteAsync(
+                    $"{k_CoordinatorUrl}/unregister/{lobbyId}/{playerId}"
+                );
                 if (!response.IsSuccessStatusCode)
                 {
                     Utils.Log($"{k_DebugPrepend}Failed to unregister lobby: {response.StatusCode}", 1);
@@ -524,6 +536,24 @@ namespace XRMultiplayer
             catch (Exception e)
             {
                 Utils.Log($"{k_DebugPrepend}Failed to unregister lobby: {e.Message}", 1);
+            }
+        }
+
+        private async Task NotifyExit(string lobbyId, string playerId)
+        {
+            try
+            {
+                var response = await m_HttpClient.DeleteAsync(
+                    $"{k_CoordinatorUrl}/exit/{lobbyId}/{playerId}"
+                );
+                if (!response.IsSuccessStatusCode)
+                {
+                    Utils.Log($"{k_DebugPrepend}Failed to notify exit: {response.StatusCode}", 1);
+                }
+            }
+            catch (Exception e)
+            {
+                Utils.Log($"{k_DebugPrepend}Failed to notify exit: {e.Message}", 1);
             }
         }
 
@@ -588,10 +618,15 @@ namespace XRMultiplayer
     }
 
     [Serializable]
+    public class QuickJoinRequest
+    {
+        public string player_id;
+    }
+
+    [Serializable]
     public class RegisterLobbyRequest
     {
-        public string lobby_id;
-        public string join_code;
+        public string player_id;
         public int max_players;
         public ulong creation_token;
     }
