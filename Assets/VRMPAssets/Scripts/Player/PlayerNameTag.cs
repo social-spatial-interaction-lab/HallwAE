@@ -91,12 +91,13 @@ namespace XRMultiplayer
             m_Player = player;
             targetTransform = player.head;
 
+            // TODO: Remove comments when we have the name tag feature working
             // Hide name tag if this is the local player
-            if (player.IsOwner)
-            {
-                m_GameObjectToHide.SetActive(false);
-                return;  // Skip the rest of setup for local player
-            }
+            // if (player.IsOwner)
+            // {
+            m_GameObjectToHide.SetActive(false);
+            return;  // Skip the rest of setup for local player
+            // }
 
             // Only setup the rest for remote players
             UpdateName(player.playerName);
