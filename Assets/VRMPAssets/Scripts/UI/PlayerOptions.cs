@@ -10,12 +10,19 @@ using UnityEngine.InputSystem;
 using UnityEngine.XR.Interaction.Toolkit.Locomotion.Turning;
 using UnityEngine.Android;
 using System.Collections;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using Unity.Services.Authentication;
 
 namespace XRMultiplayer
 {
     [DefaultExecutionOrder(100)]
     public class PlayerOptions : MonoBehaviour
     {
+        private const string k_CoordinatorUrl = "https://hallwae-coordinator.netlify.app/api/players";
+        private readonly HttpClient m_HttpClient = new HttpClient();
+
         [SerializeField] InputActionReference m_ToggleMenuAction;
         [SerializeField] AudioMixer m_Mixer;
 
@@ -210,7 +217,7 @@ namespace XRMultiplayer
 #if UNITY_EDITOR
                 EditorApplication.isPlaying = false;
 #else
-                Application.Quit();
+            Application.Quit();
 #endif
         }
 
@@ -305,5 +312,46 @@ namespace XRMultiplayer
             m_MoveProvider.useGravity = !toggle;
             m_MoveProvider.enableFly = toggle;
         }
+
+        public async void ShowPlayerInfo()
+        {
+            await GetPlayerInfo();
+        }
+
+        async Task GetPlayerInfo()
+        {
+            try
+            {
+                var playerId = AuthenticationService.Instance.PlayerId;
+                var response = await m_HttpClient.PostAsync(
+                    $"{k_CoordinatorUrl}/register/{playerId}",
+                    new StringContent("", Encoding.UTF8, "application/json")
+                );
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var playerInfo = JsonUtility.FromJson<PlayerInfoResponse>(content);
+                    PlayerHudNotification.Instance.ShowText($"Your ID: {playerInfo.player_id}");
+                }
+                else
+                {
+                    Utils.Log($"Failed to get player info: {response.StatusCode}", 1);
+                    PlayerHudNotification.Instance.ShowText("Failed to get player info");
+                }
+            }
+            catch (Exception e)
+            {
+                Utils.Log($"Failed to get player info: {e.Message}", 1);
+                PlayerHudNotification.Instance.ShowText("Failed to get player info");
+            }
+        }
+    }
+
+    [Serializable]
+    public class PlayerInfoResponse
+    {
+        public string player_id;
+        public string player_name;
     }
 }
