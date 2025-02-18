@@ -18,7 +18,6 @@ namespace XRMultiplayer
         [Header("Name Field")]
         [SerializeField] TMP_InputField m_PlayerNameInputField;
 
-        // PlayerPrefs keys
         private const string USER_NAME_KEY = "UserName";
         void Awake()
         {
