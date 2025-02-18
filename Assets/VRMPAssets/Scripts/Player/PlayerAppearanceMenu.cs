@@ -20,14 +20,17 @@ namespace XRMultiplayer
 
         // PlayerPrefs keys
         private const string USER_NAME_KEY = "UserName";
-        // Example key if an avatar dropdown is added later:
-        private const string AVATAR_INDEX_KEY = "AvatarIndex";
-
         void Awake()
         {
-            string savedName = PlayerPrefs.GetString(USER_NAME_KEY, "Player");
+            XRINetworkGameManager.LocalPlayerName.Value = PlayerPrefs.GetString(USER_NAME_KEY, "Player");
 
-            XRINetworkGameManager.LocalPlayerName.Value = savedName;
+            // Loading the saved color 
+            float r = PlayerPrefs.GetFloat("UserColor_R", 1f);
+            float g = PlayerPrefs.GetFloat("UserColor_G", 1f);
+            float b = PlayerPrefs.GetFloat("UserColor_B", 1f);
+            float a = PlayerPrefs.GetFloat("UserColor_A", 1f);
+            Color savedColor = new Color(r, g, b, a);
+            XRINetworkGameManager.LocalPlayerColor.Value = savedColor;
 
             XRINetworkGameManager.LocalPlayerName.Subscribe(SetPlayerName);
             XRINetworkGameManager.LocalPlayerColor.Subscribe(SetPlayerColor);
@@ -51,9 +54,8 @@ namespace XRMultiplayer
         /// </summary>
         public void SubmitNewPlayerName(string text)
         {
-            
-            XRINetworkGameManager.LocalPlayerName.Value = text;
 
+            XRINetworkGameManager.LocalPlayerName.Value = text;
             PlayerPrefs.SetString(USER_NAME_KEY, text);
             PlayerPrefs.Save();
         }
@@ -67,14 +69,20 @@ namespace XRMultiplayer
             List<Color> availableColors = new(m_PlayerColors);
             if (availableColors.Remove(XRINetworkGameManager.LocalPlayerColor.Value))
             {
-                XRINetworkGameManager.LocalPlayerColor.Value 
+                XRINetworkGameManager.LocalPlayerColor.Value
                  = availableColors[Random.Range(0, availableColors.Count)];
             }
             else
             {
-                XRINetworkGameManager.LocalPlayerColor.Value 
-                    = m_PlayerColors[Random.Range(0, m_PlayerColors.Length)];
+                XRINetworkGameManager.LocalPlayerColor.Value = m_PlayerColors[Random.Range(0, m_PlayerColors.Length)];
             }
+            // Code for saving the new color
+            Color newColor = XRINetworkGameManager.LocalPlayerColor.Value;
+            PlayerPrefs.SetFloat("UserColor_R", newColor.r);
+            PlayerPrefs.SetFloat("UserColor_G", newColor.g);
+            PlayerPrefs.SetFloat("UserColor_B", newColor.b);
+            PlayerPrefs.SetFloat("UserColor_A", newColor.a);
+            PlayerPrefs.Save();
         }
 
         /// <summary>

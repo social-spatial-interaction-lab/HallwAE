@@ -273,7 +273,7 @@ namespace XRMultiplayer
                     {
                         // Get spawn transform for Player 2's XROrigin
                         var (xrPosition, xrRotation) = XRINetworkGameManager.Instance.GetSpawnTransform();
-                        
+
                         // Position and rotate the XROrigin
                         m_XROrigin.transform.position = xrPosition;
                         m_XROrigin.transform.rotation = xrRotation;
@@ -283,7 +283,8 @@ namespace XRMultiplayer
                 {
                     Utils.Log("No XR Rig Available", 1);
                 }
-
+                
+                XRINetworkGameManager.LocalPlayerName.Value = PlayerPrefs.GetString("UserName", "Player");
                 SetupLocalPlayer();
             }
             CompleteSetup();
