@@ -126,6 +126,21 @@ namespace XRMultiplayer
                         var lobby = await JoinLobby(coordinatorResponse.lobby_id);
                         if (lobby != null)
                         {
+                            try 
+                            {
+                                var confirmResponse = await m_HttpClient.PostAsync(
+                                    $"{k_CoordinatorUrl}/confirm_join/{lobby.Id}/{AuthenticationService.Instance.PlayerId}",
+                                    null
+                                );
+                                if (!confirmResponse.IsSuccessStatusCode)
+                                {
+                                    Utils.Log($"{k_DebugPrepend}Failed to confirm join: {response.StatusCode}", 1);
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                Utils.Log($"{k_DebugPrepend}Failed to confirm join: {e.Message}", 1);
+                            }
                             return lobby;
                         }
                         await UnregisterLobby(coordinatorResponse.lobby_id);
