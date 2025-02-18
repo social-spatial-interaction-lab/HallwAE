@@ -69,8 +69,7 @@ namespace XRMultiplayer
             List<Color> availableColors = new(m_PlayerColors);
             if (availableColors.Remove(XRINetworkGameManager.LocalPlayerColor.Value))
             {
-                XRINetworkGameManager.LocalPlayerColor.Value
-                 = availableColors[Random.Range(0, availableColors.Count)];
+                XRINetworkGameManager.LocalPlayerColor.Value = availableColors[Random.Range(0, availableColors.Count)];
             }
             else
             {
