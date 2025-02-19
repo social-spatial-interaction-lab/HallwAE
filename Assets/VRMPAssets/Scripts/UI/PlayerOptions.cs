@@ -103,7 +103,7 @@ namespace XRMultiplayer
 
         void OnEnable()
         {
-            TogglePanel(0);
+            TogglePanel(1);
 
             if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
             {
@@ -190,7 +190,7 @@ namespace XRMultiplayer
             {
                 ToggleMenu();
             }
-            TogglePanel(0);
+            TogglePanel(1);
         }
 
         public void ToggleMenu()
