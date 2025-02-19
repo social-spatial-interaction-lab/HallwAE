@@ -74,13 +74,6 @@ namespace XRMultiplayer
             {
                 XRINetworkGameManager.LocalPlayerColor.Value = m_PlayerColors[Random.Range(0, m_PlayerColors.Length)];
             }
-            // Code for saving the new color
-            Color newColor = XRINetworkGameManager.LocalPlayerColor.Value;
-            PlayerPrefs.SetFloat("UserColor_R", newColor.r);
-            PlayerPrefs.SetFloat("UserColor_G", newColor.g);
-            PlayerPrefs.SetFloat("UserColor_B", newColor.b);
-            PlayerPrefs.SetFloat("UserColor_A", newColor.a);
-            PlayerPrefs.Save();
         }
 
         /// <summary>
@@ -97,9 +90,15 @@ namespace XRMultiplayer
         /// Updates the icon color in your UI.
         /// </summary>
         void SetPlayerColor(Color color)
-        {
+        {   
             m_PlayerIconColor.color = color;
+            PlayerPrefs.SetFloat("UserColor_R", color.r);
+            PlayerPrefs.SetFloat("UserColor_G", color.g);
+            PlayerPrefs.SetFloat("UserColor_B", color.b);
+            PlayerPrefs.SetFloat("UserColor_A", color.a);
+            PlayerPrefs.Save();
         }
+
     }
 }
 

@@ -93,8 +93,8 @@ namespace XRMultiplayer
             //Hide name tag if this is the local player
             if (player.IsOwner)
             {
-            m_GameObjectToHide.SetActive(false);
-            return;  // Skip the rest of setup for local player
+                m_GameObjectToHide.SetActive(false);
+                return;  // Skip the rest of setup for local player
             }
             // Only setup the rest for remote players
             UpdateName(player.playerName);
