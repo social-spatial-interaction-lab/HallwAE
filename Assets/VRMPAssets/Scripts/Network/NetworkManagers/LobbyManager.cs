@@ -96,10 +96,12 @@ namespace XRMultiplayer
             {
                 try
                 {
+                    var userName = PlayerPrefs.GetString("UserName", "Player");
+                    Utils.Log($"{k_DebugPrepend}Quick Join Request using username: {userName}");
                     var request = new QuickJoinRequest
                     {
                         player_id = AuthenticationService.Instance.PlayerId,
-                        player_name = XRINetworkGameManager.LocalPlayerName.Value
+                        player_name = userName,
                     };
 
                     var response = await m_HttpClient.PostAsync(
@@ -172,10 +174,12 @@ namespace XRMultiplayer
                 var request = new RegisterLobbyRequest
                 {
                     player_id = AuthenticationService.Instance.PlayerId,
-                    player_name = XRINetworkGameManager.LocalPlayerName.Value,
+                    player_name = PlayerPrefs.GetString("UserName", "Player"),
                     max_players = XRINetworkGameManager.maxPlayers,
                     creation_token = m_CreationToken
                 };
+                Utils.Log($"{k_DebugPrepend}Register Lobby Request using username: {request.player_name}");
+
 
                 var response = await m_HttpClient.PostAsync(
                     $"{k_CoordinatorUrl}/register/{lobby.Id}",
