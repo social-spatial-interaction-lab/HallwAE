@@ -63,7 +63,7 @@ namespace XRMultiplayer
 
         const string k_DebugPrepend = "<color=#EC0CFA>[Lobby Manager]</color> ";
 
-        private const string k_CoordinatorUrl = "https://hallwae-coordinator.netlify.app/api/lobbies";
+        private const string k_CoordinatorUrl = Constants.k_CoordinatorUrl + "/lobbies";
         private readonly HttpClient m_HttpClient = new HttpClient();
 
         private ulong m_CreationToken = 0;

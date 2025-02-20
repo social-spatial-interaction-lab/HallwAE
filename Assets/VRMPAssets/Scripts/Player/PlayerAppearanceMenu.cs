@@ -1,7 +1,11 @@
+using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.Services.Authentication;
 
 namespace XRMultiplayer
 {
@@ -51,12 +55,42 @@ namespace XRMultiplayer
         /// Called by a Unity UI InputField (OnEndEdit) or a button that passes the field's text.
         /// This sets the player's name network-wide AND saves it in PlayerPrefs.
         /// </summary>
-        public void SubmitNewPlayerName(string text)
-        {
 
+        private readonly HttpClient m_HttpClient = new();
+        private const string k_DebugPrepend = "[PlayerAppearanceMenu] ";
+
+        public async void SubmitNewPlayerName(string text)
+        {
             XRINetworkGameManager.LocalPlayerName.Value = text;
             PlayerPrefs.SetString(USER_NAME_KEY, text);
             PlayerPrefs.Save();
+
+            try 
+            {
+                var content = new StringContent(
+                    JsonUtility.ToJson(new { player_name = text }),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+                
+                var response = await m_HttpClient.PostAsync(
+                    $"{Constants.k_CoordinatorUrl}/players/register/{AuthenticationService.Instance.PlayerId}",
+                    content
+                );
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Debug.LogError($"{k_DebugPrepend}Failed to register player name: {response.StatusCode}");
+                }
+                else
+                {
+                    Debug.Log($"{k_DebugPrepend}Successfully registered player name: {text}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{k_DebugPrepend}Failed to register player name: {e.Message}");
+            }
         }
 
         /// <summary>
@@ -68,11 +102,11 @@ namespace XRMultiplayer
             List<Color> availableColors = new(m_PlayerColors);
             if (availableColors.Remove(XRINetworkGameManager.LocalPlayerColor.Value))
             {
-                XRINetworkGameManager.LocalPlayerColor.Value = availableColors[Random.Range(0, availableColors.Count)];
+                XRINetworkGameManager.LocalPlayerColor.Value = availableColors[UnityEngine.Random.Range(0, availableColors.Count)];
             }
             else
             {
-                XRINetworkGameManager.LocalPlayerColor.Value = m_PlayerColors[Random.Range(0, m_PlayerColors.Length)];
+                XRINetworkGameManager.LocalPlayerColor.Value = m_PlayerColors[UnityEngine.Random.Range(0, m_PlayerColors.Length)];
             }
         }
 
