@@ -284,7 +284,7 @@ namespace XRMultiplayer
                     Utils.Log("No XR Rig Available", 1);
                 }
                 
-                XRINetworkGameManager.LocalPlayerName.Value = PlayerPrefs.GetString("UserName", "Player");
+                LoadSettings();
                 SetupLocalPlayer();
             }
             CompleteSetup();
@@ -306,6 +306,17 @@ namespace XRMultiplayer
         {
             m_LeftHandOrigin = left;
             m_RightHandOrigin = right;
+        }
+
+        void LoadSettings()
+        {
+            XRINetworkGameManager.LocalPlayerName.Value = PlayerPrefs.GetString("UserName", "Player");
+
+            float r = PlayerPrefs.GetFloat("UserColor_R", 1f);
+            float g = PlayerPrefs.GetFloat("UserColor_G", 1f);
+            float b = PlayerPrefs.GetFloat("UserColor_B", 1f);
+            float a = PlayerPrefs.GetFloat("UserColor_A", 1f);
+            XRINetworkGameManager.LocalPlayerColor.Value = new Color(r, g, b, a);;
         }
 
         /// <summary>
