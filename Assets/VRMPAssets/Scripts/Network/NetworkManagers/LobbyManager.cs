@@ -98,7 +98,8 @@ namespace XRMultiplayer
                 {
                     var request = new QuickJoinRequest
                     {
-                        player_id = AuthenticationService.Instance.PlayerId
+                        player_id = AuthenticationService.Instance.PlayerId,
+                        player_name = XRINetworkGameManager.LocalPlayerName.Value
                     };
 
                     var response = await m_HttpClient.PostAsync(
@@ -171,6 +172,7 @@ namespace XRMultiplayer
                 var request = new RegisterLobbyRequest
                 {
                     player_id = AuthenticationService.Instance.PlayerId,
+                    player_name = XRINetworkGameManager.LocalPlayerName.Value,
                     max_players = XRINetworkGameManager.maxPlayers,
                     creation_token = m_CreationToken
                 };
@@ -627,7 +629,6 @@ namespace XRMultiplayer
     public class QuickJoinResponse
     {
         public string lobby_id;
-        public string join_code;
         public bool should_create;
         public ulong creation_token;
     }
@@ -636,6 +637,7 @@ namespace XRMultiplayer
     public class QuickJoinRequest
     {
         public string player_id;
+        public string player_name;
     }
 
     [Serializable]
@@ -644,5 +646,6 @@ namespace XRMultiplayer
         public string player_id;
         public int max_players;
         public ulong creation_token;
+        public string player_name;
     }
 }

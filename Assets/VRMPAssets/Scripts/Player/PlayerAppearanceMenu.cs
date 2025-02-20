@@ -68,7 +68,7 @@ namespace XRMultiplayer
             try 
             {
                 var content = new StringContent(
-                    JsonUtility.ToJson(new { player_name = text }),
+                    JsonUtility.ToJson(new RegisterPlayerRequest{ player_name = text }),
                     Encoding.UTF8,
                     "application/json"
                 );
@@ -132,7 +132,11 @@ namespace XRMultiplayer
             PlayerPrefs.SetFloat("UserColor_A", color.a);
             PlayerPrefs.Save();
         }
-
+    }
+    [Serializable]
+    public class RegisterPlayerRequest
+    {
+        public string player_name;
     }
 }
 
