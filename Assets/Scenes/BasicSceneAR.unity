@@ -4722,15 +4722,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9027064624634110090}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c954b6e8024c0b248a278eab8c6828ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_MinMaxHeight: {x: -2.5, y: 25}
   m_ResetDistance: 15
-  offlinePosition: {x: 0, y: 0, z: -1.465}
-  onlinePosition: {x: 0, y: 0, z: 1.465}
+  offlinePosition: {x: 0, y: 0, z: 0}
+  onlinePosition: {x: 0, y: 0, z: 0}
 --- !u!114 &3202401675352926802
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9205,7 +9204,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e69981d55eaca4fbe805f8ba78524fd7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_MinMaxHeight: {x: 0, y: 0.5}
+  m_MinMaxHeight: {x: 0, y: 0}
   m_ResetHeight: 0
 --- !u!114 &9027064624634110111
 MonoBehaviour:
