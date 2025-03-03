@@ -5,7 +5,6 @@ namespace XRMultiplayer
 {
     public class CharacterResetter : MonoBehaviour
     {
-        [SerializeField] Vector2 m_MinMaxHeight = new Vector2(-2.5f, 25.0f);
         [SerializeField] float m_ResetDistance = 75.0f;
         [SerializeField] Vector3 offlinePosition = new Vector3(0, .5f, -12.0f);
         [SerializeField] Vector3 onlinePosition = new Vector3(0, .15f, 0);
@@ -15,7 +14,6 @@ namespace XRMultiplayer
         {
             XRINetworkGameManager.Connected.Subscribe(UpdateResetPosition);
             m_TeleportationProvider = GetComponentInChildren<TeleportationProvider>();
-
             m_ResetPosition = offlinePosition;
             ResetPlayer();
         }
@@ -36,14 +34,6 @@ namespace XRMultiplayer
         // Update is called once per frame
         void Update()
         {
-            if (transform.position.y < m_MinMaxHeight.x)
-            {
-                ResetPlayer();
-            }
-            else if (transform.position.y > m_MinMaxHeight.y)
-            {
-                ResetPlayer();
-            }
             if (Mathf.Abs(transform.position.x) > m_ResetDistance || Mathf.Abs(transform.position.z) > m_ResetDistance)
             {
                 ResetPlayer();
