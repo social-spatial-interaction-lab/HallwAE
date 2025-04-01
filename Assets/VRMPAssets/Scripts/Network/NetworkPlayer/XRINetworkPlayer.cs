@@ -11,6 +11,7 @@ namespace XRMultiplayer
     /// <summary>
     /// XRINetworkPlayer class used for simple interactions.
     /// </summary>
+    [RequireComponent(typeof(AudioSource))] // Ensure AudioSource exists
     public class XRINetworkPlayer : NetworkBehaviour
     {
         /// <summary>
@@ -38,6 +39,10 @@ namespace XRMultiplayer
         /// Non-Local player transforms.
         /// </summary>
         public Transform rightHand;
+
+        [Header("Audio Settings")]
+        [SerializeField, Tooltip("AudioSource component for playing sounds like the spawn sound.")]
+        private AudioSource m_AudioSource;
 
         /// <summary>
         /// Action called when the player name is updated.
@@ -269,6 +274,7 @@ namespace XRMultiplayer
                 {
                     m_HeadOrigin = m_XROrigin.Camera.transform;
 
+                    // Host doesn't need offset, client does.
                     if (!IsHost)
                     {
                         // Get spawn transform for Player 2's XROrigin
@@ -277,6 +283,15 @@ namespace XRMultiplayer
                         // Position and rotate the XROrigin
                         m_XROrigin.transform.position = xrPosition;
                         m_XROrigin.transform.rotation = xrRotation;
+
+                        // Store the offset and rotation to apply to networked transforms later
+                        m_SpawnOffset.Value = xrPosition;
+                        m_SpawnRotation.Value = xrRotation;
+                    }
+                    else // Host specific setup if needed (e.g., ensuring offset/rotation are identity)
+                    {
+                        m_SpawnOffset.Value = Vector3.zero;
+                        m_SpawnRotation.Value = Quaternion.identity;
                     }
                 }
                 else
@@ -286,6 +301,20 @@ namespace XRMultiplayer
                 
                 LoadSettings();
                 SetupLocalPlayer();
+            }
+            else // This runs on existing clients when a new player spawns
+            {
+                 // Play spawn sound for existing players at the new player's location
+                if (m_AudioSource != null)
+                {
+                    // Ensure the AudioSource is configured for 3D spatial sound in the inspector (Spatial Blend = 1)
+                    m_AudioSource.Play();
+                    Debug.Log($"Played spawn sound for non-owner player: {playerName}");
+                }
+                else
+                {
+                    Debug.LogWarning($"AudioSource not assigned on {gameObject.name}, cannot play spawn sound.");
+                }
             }
             CompleteSetup();
         }
