@@ -484,6 +484,8 @@ MonoBehaviour:
   m_HandControllerEulerOffsets:
   - {x: 0.25, y: 2.91, z: 101.8}
   - {x: 1.04, y: 0, z: 261.36}
+  m_LeftHandAnchor: {fileID: 0}
+  m_RightHandAnchor: {fileID: 0}
 --- !u!82 &4572666206722586123
 AudioSource:
   m_ObjectHideFlags: 0

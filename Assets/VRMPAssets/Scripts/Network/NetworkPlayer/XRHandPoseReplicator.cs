@@ -127,15 +127,27 @@ namespace XRMultiplayer
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-
             if (IsOwner)
             {
-                m_XROrigin = FindFirstObjectByType<XROrigin>();
-                if (m_XROrigin.TryGetComponent(out m_XRModalityManager))
+                // Locate the rig instance by tag and find hand anchors under it
+                var rigGO = GameObject.FindWithTag("PlayerRig");
+                if (rigGO == null)
                 {
-                    SetupLocalHands();
+                    Debug.LogError("Could not find GameObject tagged 'PlayerRig'.");
+                    return;
                 }
-
+                // Assumes tracking space has child 'TrackingSpace/LeftHandAnchor' and 'TrackingSpace/RightHandAnchor'
+                var left = rigGO.transform.Find("TrackingSpace/LeftHandAnchor");
+                var right = rigGO.transform.Find("TrackingSpace/RightHandAnchor");
+                if (left == null || right == null)
+                {
+                    Debug.LogError("LeftHandAnchor or RightHandAnchor not found under PlayerRig/TrackingSpace.");
+                    return;
+                }
+                m_LeftHandOrigin = left;
+                m_RightHandOrigin = right;
+                XRINetworkPlayer.LocalPlayer.SetHandOrigins(m_LeftHandOrigin, m_RightHandOrigin);
+                // 手指引用部分保持不变
                 SetupLocalFingerReferences();
             }
             else
@@ -147,29 +159,6 @@ namespace XRMultiplayer
         void UpdateTrackingType(XRInputModalityManager.InputMode old, XRInputModalityManager.InputMode current)
         {
             ChangeControllerType(current);
-        }
-
-        void SetupLocalHands()
-        {
-            m_LeftControllerTransformReference = m_XRModalityManager.leftController.transform;
-            m_RightControllerTransformReference = m_XRModalityManager.rightController.transform;
-
-            if (m_XRModalityManager.leftHand == null)    //Rig doesn't have hands setup
-            {
-                m_LeftHandTransformReference = m_XRModalityManager.leftController.transform;
-                m_RightHandTransformReference = m_XRModalityManager.rightController.transform;
-                SetTrackingType(XRInputModalityManager.InputMode.MotionController);
-            }
-            else    //Setup Hands and modality change listeners
-            {
-                m_LeftHandTransformReference = m_XRModalityManager.leftHand.GetComponentInChildren<XRHandSkeletonDriver>().rootTransform;
-                m_RightHandTransformReference = m_XRModalityManager.rightHand.GetComponentInChildren<XRHandSkeletonDriver>().rootTransform;
-
-                SetTrackingType(XRInputModalityManager.currentInputMode.Value);
-
-                m_XRModalityManager.trackedHandModeStarted.AddListener(SwapToHands);
-                m_XRModalityManager.motionControllerModeStarted.AddListener(SwapToControllers);
-            }
         }
 
         void SetupLocalFingerReferences()

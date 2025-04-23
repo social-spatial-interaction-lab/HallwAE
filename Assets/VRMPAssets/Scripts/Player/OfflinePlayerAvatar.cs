@@ -85,9 +85,11 @@ namespace XRMultiplayer
         /// <inheritdoc/>
         void Start()
         {
-            XROrigin rig = FindFirstObjectByType<XROrigin>();
-            m_HeadOrigin = rig.Camera.transform;
-
+            // Since you're using OVRCameraRig, just use the MainCamera's transform
+            if (Camera.main != null)
+                m_HeadOrigin = Camera.main.transform;
+            else
+                Debug.LogError("MainCamera not found in scene (check your OVRCameraRig setup)");
         }
 
         void OnEnable()

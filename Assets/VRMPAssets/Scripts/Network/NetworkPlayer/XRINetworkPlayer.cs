@@ -269,11 +269,9 @@ namespace XRMultiplayer
                 XRINetworkGameManager.Instance.LocalPlayerConnected(NetworkObject.OwnerClientId);
 
                 // Get Origin and set head
-                m_XROrigin = FindFirstObjectByType<XROrigin>();
-                if (m_XROrigin != null)
+                if (Camera.main != null)
                 {
-                    m_HeadOrigin = m_XROrigin.Camera.transform;
-
+                    m_HeadOrigin = Camera.main.transform;
                     // Host doesn't need offset, client does.
                     if (!IsHost)
                     {
