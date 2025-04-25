@@ -64,8 +64,19 @@ namespace XRMultiplayer
         /// </summary>
         protected Transform m_LeftHandOrigin, m_RightHandOrigin;
 
+        // Hand-tracking subsystem
+        List<XRHandSubsystem> m_HandSubsystems = new List<XRHandSubsystem>();
+        XRHandSubsystem m_HandSubsystem;
+
         private void Awake()
         {
+            // Initialize hand-tracking subsystem
+            SubsystemManager.GetSubsystems(m_HandSubsystems);
+            if (m_HandSubsystems.Count > 0)
+                m_HandSubsystem = m_HandSubsystems[0];
+            else
+                Debug.LogError("No XRHandSubsystem found; finger tracking disabled.");
+
             m_FingerRotationsLeft = new NetworkList<Vector3>(new List<Vector3>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
             m_FingerRotationsRight = new NetworkList<Vector3>(new List<Vector3>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
@@ -163,88 +174,42 @@ namespace XRMultiplayer
 
         void SetupLocalFingerReferences()
         {
-            XRInputModalityManager modalityMangager = FindFirstObjectByType<XRInputModalityManager>();
-
-            // Early out if hands are not setup
-            if (modalityMangager.leftHand == null)
+            if (m_HandSubsystem == null)
             {
-                // Set Default values for finger rotations
-                for (int i = 0; i < 3; i++)
-                {
-                    m_FingerCurlLeft.Add(0.0f);
-                    m_FingerCurlRight.Add(0.0f);
-                }
-
+                Debug.LogError("No XRHandSubsystem available for finger tracking.");
                 m_IsInitialized.Value = true;
-                ChangeControllerType(XRInputModalityManager.InputMode.MotionController);
                 return;
             }
+            // Clear previous data
+            m_FingerRotationsLeft.Clear();
+            m_FingerRotationsRight.Clear();
+            m_FingerCurlLeft.Clear();
+            m_FingerCurlRight.Clear();
 
-
-            XRHandSkeletonDriver localLeftHandSkeleton = modalityMangager.leftHand.GetComponentInChildren<XRHandSkeletonDriver>();
-            XRHandSkeletonDriver localRightHandSkeleton = modalityMangager.rightHand.GetComponentInChildren<XRHandSkeletonDriver>();
-
-
-            m_LocalHandFidelityOptions = new HandFidelityOption[2];
-            for (int i = 0; i < m_LocalHandFidelityOptions.Length; i++)
+            // Iterate through all hand joints by ID
+            int jointCount = (int)XRHandJointID.EndMarker;
+            for (int i = 0; i < jointCount; ++i)
             {
-                m_LocalHandFidelityOptions[i].fingerJoints = new FingerJoints[5];
+                XRHandJointID jointId = (XRHandJointID)i;
 
-                // Loop through each finger and setup name and joints
-                for (int j = 0; j < m_LocalHandFidelityOptions[i].fingerJoints.Length; j++)
-                {
-                    m_LocalHandFidelityOptions[i].fingerJoints[j].fingerName = m_HandCurler[i].handFidelityOptions[0].fingerJoints[j].fingerName;
-                    m_LocalHandFidelityOptions[i].fingerJoints[j].jointTransformReferences = new List<JointToTransformReference>();
+                // Left hand joint
+                if (m_HandSubsystem.leftHand.TryGetJoint(jointId, out XRHandJoint leftJoint))
+                    m_FingerRotationsLeft.Add(leftJoint.pose.rotation.eulerAngles);
+                else
+                    m_FingerRotationsLeft.Add(Vector3.zero);
 
-                    // Loop through each joint in the finger and setup the joint references
-                    for (int k = 0; k < m_HandCurler[i].handFidelityOptions[0].fingerJoints[j].jointTransformReferences.Count; k++)
-                    {
-                        XRHandSkeletonDriver currentHandSkeletonDriver = i % 2 == 0 ? localLeftHandSkeleton : localRightHandSkeleton;
-                        // Loop through each local hand and look up the joint reference
-                        foreach (var localJoint in currentHandSkeletonDriver.jointTransformReferences)
-                        {
-                            if (m_HandCurler[i].handFidelityOptions[0].fingerJoints[j].jointTransformReferences[k].xrHandJointID == localJoint.xrHandJointID)
-                            {
-                                m_LocalHandFidelityOptions[i].fingerJoints[j].jointTransformReferences.Add(localJoint);
-                                break;
-                            }
-                        }
-                    }
-                }
+                // Right hand joint
+                if (m_HandSubsystem.rightHand.TryGetJoint(jointId, out XRHandJoint rightJoint))
+                    m_FingerRotationsRight.Add(rightJoint.pose.rotation.eulerAngles);
+                else
+                    m_FingerRotationsRight.Add(Vector3.zero);
+
+                // Initialize curl values
+                m_FingerCurlLeft.Add(0f);
+                m_FingerCurlRight.Add(0f);
             }
-
-            foreach (var fingerSync in m_LocalHandFidelityOptions[0].fingerJoints)
-            {
-                foreach (var joint in fingerSync.jointTransformReferences)
-                {
-                    m_FingerRotationsLeft.Add(joint.jointTransform.eulerAngles);
-                }
-            }
-
-            foreach (var fingerSync in m_LocalHandFidelityOptions[1].fingerJoints)
-            {
-                foreach (var joint in fingerSync.jointTransformReferences)
-                {
-                    m_FingerRotationsRight.Add(joint.jointTransform.eulerAngles);
-                }
-            }
-
-
-            // Set Default values for finger curl
-            foreach (var fingerSync in m_LocalHandFidelityOptions[0].fingerJoints)
-            {
-                m_FingerCurlLeft.Add(0.0f);
-            }
-
-            foreach (var fingerSync in m_LocalHandFidelityOptions[1].fingerJoints)
-            {
-                m_FingerCurlRight.Add(0.0f);
-            }
-
 
             m_IsInitialized.Value = true;
-
-            SetFidelity(m_FidelityLevel);
         }
 
         public void ChangeControllerType(XRInputModalityManager.InputMode inputMode)
