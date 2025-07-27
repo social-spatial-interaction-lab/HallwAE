@@ -3,6 +3,7 @@ using Unity.Netcode;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SubsystemsImplementation;
 using UnityEngine.XR.Hands;
 using UnityEngine.XR.Interaction.Toolkit.Inputs;
 
@@ -45,7 +46,6 @@ namespace XRMultiplayer
         [Header("Offsets")]
         [SerializeField] Vector3[] m_HandControllerOffsets;
         [SerializeField] Vector3[] m_HandControllerEulerOffsets;
-        HandFidelityOption[] m_LocalHandFidelityOptions;
 
         public XRInputModalityManager.InputMode trackingType { get => m_TrackingType.Value; }
         readonly NetworkVariable<XRInputModalityManager.InputMode> m_TrackingType = new(XRInputModalityManager.InputMode.None, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -180,6 +180,7 @@ namespace XRMultiplayer
                 m_IsInitialized.Value = true;
                 return;
             }
+            
             // Clear previous data
             m_FingerRotationsLeft.Clear();
             m_FingerRotationsRight.Clear();
@@ -193,14 +194,16 @@ namespace XRMultiplayer
                 XRHandJointID jointId = (XRHandJointID)i;
 
                 // Left hand joint
-                if (m_HandSubsystem.leftHand.TryGetJoint(jointId, out XRHandJoint leftJoint))
-                    m_FingerRotationsLeft.Add(leftJoint.pose.rotation.eulerAngles);
+                var leftJoint = m_HandSubsystem.leftHand.GetJoint(jointId);
+                if (leftJoint.TryGetPose(out Pose leftPose))
+                    m_FingerRotationsLeft.Add(leftPose.rotation.eulerAngles);
                 else
                     m_FingerRotationsLeft.Add(Vector3.zero);
 
                 // Right hand joint
-                if (m_HandSubsystem.rightHand.TryGetJoint(jointId, out XRHandJoint rightJoint))
-                    m_FingerRotationsRight.Add(rightJoint.pose.rotation.eulerAngles);
+                var rightJoint = m_HandSubsystem.rightHand.GetJoint(jointId);
+                if (rightJoint.TryGetPose(out Pose rightPose))
+                    m_FingerRotationsRight.Add(rightPose.rotation.eulerAngles);
                 else
                     m_FingerRotationsRight.Add(Vector3.zero);
 
@@ -256,25 +259,23 @@ namespace XRMultiplayer
 
         void SetNetworkFingerRotations()
         {
-            int currentIdx = 0;
-            for (int i = 0; i < m_LocalHandFidelityOptions[0].fingerJoints.Length; i++)
-            {
-                for (int j = 0; j < m_LocalHandFidelityOptions[0].fingerJoints[i].jointTransformReferences.Count; j++)
-                {
-                    m_FingerRotationsLeft[currentIdx++] =
-                        m_LocalHandFidelityOptions[0].fingerJoints[i].jointTransformReferences[j].jointTransform.eulerAngles;
+            if (m_HandSubsystem == null) return;
 
-                }
-            }
-
-            currentIdx = 0;
-            for (int i = 0; i < m_LocalHandFidelityOptions[1].fingerJoints.Length; i++)
+            // Update all joint rotations from XRHandSubsystem
+            int jointCount = (int)XRHandJointID.EndMarker;
+            for (int i = 0; i < jointCount && i < m_FingerRotationsLeft.Count; ++i)
             {
-                for (int j = 0; j < m_LocalHandFidelityOptions[1].fingerJoints[i].jointTransformReferences.Count; j++)
-                {
-                    m_FingerRotationsRight[currentIdx++] =
-                        m_LocalHandFidelityOptions[1].fingerJoints[i].jointTransformReferences[j].jointTransform.eulerAngles;
-                }
+                XRHandJointID jointId = (XRHandJointID)i;
+
+                // Left hand
+                var leftJoint = m_HandSubsystem.leftHand.GetJoint(jointId);
+                if (leftJoint.TryGetPose(out Pose leftPose))
+                    m_FingerRotationsLeft[i] = leftPose.rotation.eulerAngles;
+
+                // Right hand
+                var rightJoint = m_HandSubsystem.rightHand.GetJoint(jointId);
+                if (rightJoint.TryGetPose(out Pose rightPose))
+                    m_FingerRotationsRight[i] = rightPose.rotation.eulerAngles;
             }
         }
 
@@ -326,14 +327,11 @@ namespace XRMultiplayer
 
         void SetNetworkCurl()
         {
-            for (int i = 0; i < m_LocalHandFidelityOptions[0].fingerJoints.Length; i++)
+            // Calculate curl for 5 fingers (thumb, index, middle, ring, little)
+            for (int i = 0; i < 5; i++)
             {
-                SetLocalNetworkFingerCurl(0, i, GetAverageX(0, i));
-            }
-
-            for (int i = 0; i < m_LocalHandFidelityOptions[1].fingerJoints.Length; i++)
-            {
-                SetLocalNetworkFingerCurl(1, i, GetAverageX(1, i));
+                SetLocalNetworkFingerCurl(0, i, GetAverageFingerCurl(0, i));
+                SetLocalNetworkFingerCurl(1, i, GetAverageFingerCurl(1, i));
             }
         }
 
@@ -351,29 +349,43 @@ namespace XRMultiplayer
         }
 
 
-        float GetAverageX(int hand, int finger)
+        float GetAverageFingerCurl(int hand, int finger)
         {
-            float x = 0;
-            int digitCount = 4;
+            if (m_HandSubsystem == null) return 0f;
 
-            if (finger == 0)     //Thumbs have 1 less joint
+            // Map finger index to XRHandJointID ranges
+            // Thumb: 2-5, Index: 6-10, Middle: 11-15, Ring: 16-20, Little: 21-25
+            int startJoint = 2 + (finger * 5);
+            int endJoint = startJoint + 4;
+            
+            // For thumb, we have one less joint
+            if (finger == 0)
             {
-                digitCount--;
+                startJoint = 2;
+                endJoint = 5;
             }
 
-            for (int i = 1; i < digitCount; i++)
+            float totalCurl = 0f;
+            int validJoints = 0;
+
+            var handToCheck = (hand == 0) ? m_HandSubsystem.leftHand : m_HandSubsystem.rightHand;
+
+            for (int i = startJoint + 1; i <= endJoint; i++) // Skip the metacarpal
             {
-                float currentX = m_LocalHandFidelityOptions[hand].fingerJoints[finger].jointTransformReferences[i].jointTransform.localEulerAngles.x;
-                if (currentX < 0 || currentX > 180)
+                var joint = handToCheck.GetJoint((XRHandJointID)i);
+                if (joint.TryGetPose(out Pose jointPose))
                 {
-                    currentX = 0;
+                    // Get the local rotation and extract the curl angle
+                    float curlAngle = jointPose.rotation.eulerAngles.x;
+                    if (curlAngle > 180f) curlAngle -= 360f;
+                    curlAngle = Mathf.Clamp(curlAngle, 0f, 90f);
+                    
+                    totalCurl += curlAngle;
+                    validJoints++;
                 }
-                x += currentX;
             }
 
-            float avg = Mathf.Clamp(x / (digitCount - 1), 0, 100);
-
-            return avg / 100;
+            return validJoints > 0 ? (totalCurl / validJoints) / 90f : 0f; // Normalize to 0-1
         }
 
         void SyncFingerCurlLimited()
@@ -395,19 +407,16 @@ namespace XRMultiplayer
 
         void SetNetworkCurlLimited()
         {
-
+            // Set thumb and index finger individually
             for (int i = 0; i < 2; i++)
             {
-                SetLocalNetworkFingerCurl(0, i, GetAverageX(0, i));
+                SetLocalNetworkFingerCurl(0, i, GetAverageFingerCurl(0, i));
+                SetLocalNetworkFingerCurl(1, i, GetAverageFingerCurl(1, i));
             }
 
-            for (int i = 0; i < 2; i++)
-            {
-                SetLocalNetworkFingerCurl(1, i, GetAverageX(1, i));
-            }
-
-            SetLocalNetworkFingerCurl(0, 2, GetAverageXCombined(0));
-            SetLocalNetworkFingerCurl(1, 2, GetAverageXCombined(1));
+            // Set combined curl for middle, ring, and little fingers
+            SetLocalNetworkFingerCurl(0, 2, GetAverageCombinedFingersCurl(0));
+            SetLocalNetworkFingerCurl(1, 2, GetAverageCombinedFingersCurl(1));
         }
 
         void GetNetworkCurlLimited()
@@ -423,32 +432,25 @@ namespace XRMultiplayer
             }
         }
 
-        float GetAverageXCombined(int hand)
+        float GetAverageCombinedFingersCurl(int hand)
         {
-            float x = 0;
+            if (m_HandSubsystem == null) return 0f;
 
-            int digitCount = 4;
-            int startFinger = 2;
-            int endFinger = 5;
+            float totalCurl = 0f;
+            int validFingers = 0;
 
-            int count = 0;
-            for (int i = startFinger; i < endFinger; i++)
+            // Average the curl of middle (2), ring (3), and little (4) fingers
+            for (int finger = 2; finger < 5; finger++)
             {
-                for (int j = 1; j < digitCount; j++)
+                float curl = GetAverageFingerCurl(hand, finger);
+                if (curl > 0f)
                 {
-                    float currentX = m_LocalHandFidelityOptions[hand].fingerJoints[i].jointTransformReferences[j].jointTransform.localEulerAngles.x;
-                    if (currentX < 0 || currentX > 180)
-                    {
-                        currentX = 0;
-                    }
-                    x += currentX;
-                    count++;
+                    totalCurl += curl;
+                    validFingers++;
                 }
             }
 
-            float avg = Mathf.Clamp(x / count, 0, 100);
-
-            return avg / 100;
+            return validFingers > 0 ? totalCurl / validFingers : 0f;
         }
 
         void SyncControllerTracking()

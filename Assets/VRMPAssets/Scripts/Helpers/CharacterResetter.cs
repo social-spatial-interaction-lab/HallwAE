@@ -1,21 +1,40 @@
+using System;
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit.Locomotion.Teleportation;
 
 namespace XRMultiplayer
 {
     public class CharacterResetter : MonoBehaviour
     {
-        [SerializeField] float m_ResetDistance = 75.0f;
+        [SerializeField] float m_ResetDistance = 15.0f;
         [SerializeField] Vector3 offlinePosition = new Vector3(0, .5f, -12.0f);
         [SerializeField] Vector3 onlinePosition = new Vector3(0, .15f, 0);
-        TeleportationProvider m_TeleportationProvider;
         Vector3 m_ResetPosition;
+        Camera m_MainCamera;
+
         private void Start()
         {
             XRINetworkGameManager.Connected.Subscribe(UpdateResetPosition);
-            m_TeleportationProvider = GetComponentInChildren<TeleportationProvider>();
+            // m_TeleportationProvider = GetComponentInChildren<TeleportationProvider>();
+            m_MainCamera = FindCenterEyeCamera();
+            if (m_MainCamera == null)
+            {
+                Utils.LogError("CenterEyeAnchor Camera with tag 'MainCamera' not found under XR Origin! CharacterResetter cannot function.");
+            }
             m_ResetPosition = offlinePosition;
             ResetPlayer();
+        }
+
+        private Camera FindCenterEyeCamera()
+        {
+            Camera[] cameras = GetComponentsInChildren<Camera>(true);
+            foreach (Camera cam in cameras)
+            {
+                if (cam.gameObject.name == "CenterEyeAnchor" && cam.CompareTag("MainCamera"))
+                {
+                    return cam;
+                }
+            }
+            return null;
         }
 
         void UpdateResetPosition(bool connected)
@@ -47,16 +66,20 @@ namespace XRMultiplayer
 
         void ResetPlayer(Vector3 destination)
         {
-            TeleportRequest teleportRequest = new()
+            if (m_MainCamera == null)
             {
-                destinationPosition = destination,
-                destinationRotation = Quaternion.identity
-            };
-
-            if (!m_TeleportationProvider.QueueTeleportRequest(teleportRequest))
-            {
-                Utils.LogWarning("Failed to queue teleport request");
+                Utils.LogError("Cannot reset player position, Main Camera reference is missing.");
+                return;
             }
+
+            Vector3 cameraLocalPosition = m_MainCamera.transform.localPosition;
+
+            Vector3 targetOriginPosition = destination - cameraLocalPosition;
+
+            transform.position = targetOriginPosition;
+            transform.rotation = Quaternion.identity;
+
+            Utils.Log($"Player position reset. Origin moved to {transform.position}.");
         }
 
         [ContextMenu("Set Player To Online Position")]
