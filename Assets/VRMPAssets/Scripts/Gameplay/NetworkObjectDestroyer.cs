@@ -86,8 +86,8 @@ namespace XRMultiplayer
                 if (other.TryGetComponent(out CharacterResetter playerResetter))
                 {
                     PlayDestroyEffectRpc(playerResetter.transform.position);
-                    // PlayDestroyEffectServerRpc(playerResetter.transform.position, NetworkManager.Singleton.LocalClientId);
-                    playerResetter.ResetPlayer();
+                    // In AR mode, we don't reset player position
+                    // playerResetter provides boundary warnings only
                 }
 
                 if (other.TryGetComponent(out Projectile projectile))
