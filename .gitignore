@@ -76,3 +76,5 @@ crashlytics-build.properties
 
 .DS_Store
 TempAssembly.dll
+.stfolder/syncthing-folder-748246.txt
+.claude/settings.local.json
