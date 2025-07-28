@@ -96,21 +96,24 @@ namespace XRMultiplayer
         {
             XRINetworkGameManager.LocalPlayerColor.Subscribe(UpdatePlayerColor);
             VoiceChatManager.s_HasMicrophonePermission.Subscribe(MicrophonePermissionGranted);
-            XRINetworkGameManager.Connected.Subscribe(connected =>
+            XRINetworkGameManager.Connected.Subscribe(OnConnectedChanged);
+        }
+        
+        void OnConnectedChanged(bool connected)
+        {
+            // Check if this object still exists before accessing gameObject
+            if (this != null)
             {
                 gameObject.SetActive(!connected);
-            });
+            }
         }
 
         void OnDisable()
         {
             XRINetworkGameManager.LocalPlayerColor.Unsubscribe(UpdatePlayerColor);
-            VoiceChatManager.s_HasMicrophonePermission.Subscribe(MicrophonePermissionGranted);
+            VoiceChatManager.s_HasMicrophonePermission.Unsubscribe(MicrophonePermissionGranted);
             StopMicrophone();
-            XRINetworkGameManager.Connected.Unsubscribe(connected =>
-            {
-                gameObject.SetActive(!connected);
-            });
+            XRINetworkGameManager.Connected.Unsubscribe(OnConnectedChanged);
         }
 
         /// <inheritdoc/>
