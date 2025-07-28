@@ -1,6 +1,5 @@
 using UnityEngine;
 using Unity.Netcode;
-using Unity.XR.CoreUtils;
 using Unity.Collections;
 using System;
 using Unity.Services.Vivox;
@@ -128,9 +127,9 @@ namespace XRMultiplayer
         protected Transform m_LeftHandOrigin, m_RightHandOrigin, m_HeadOrigin;
 
         /// <summary>
-        /// Reference to the local player XR Origin
+        /// Reference to the local player OVRCameraRig
         /// </summary>
-        protected XROrigin m_XROrigin;
+        protected Transform m_OVRCameraRig;
 
         /// <summary>
         /// If the player has been connected to the the game.
@@ -218,6 +217,10 @@ namespace XRMultiplayer
         {
             if (!IsOwner) return;
 
+            // Check if required references are set
+            if (m_HeadOrigin == null || m_LeftHandOrigin == null || m_RightHandOrigin == null)
+                return;
+
             // Set transforms to be replicated with ClientNetworkTransforms
             // Apply spawn offset to the networked positions and rotations
             Quaternion finalRotation = m_SpawnRotation.Value * m_HeadOrigin.rotation;
@@ -270,6 +273,18 @@ namespace XRMultiplayer
                 LocalPlayer = this;
                 XRINetworkGameManager.Instance.LocalPlayerConnected(NetworkObject.OwnerClientId);
 
+                // Find OVRCameraRig
+                GameObject ovrRig = GameObject.FindWithTag("PlayerRig");
+                if (ovrRig == null)
+                {
+                    ovrRig = GameObject.Find("OVRCameraRig");
+                }
+                
+                if (ovrRig != null)
+                {
+                    m_OVRCameraRig = ovrRig.transform;
+                }
+                
                 // Get Origin and set head
                 if (Camera.main != null)
                 {
@@ -280,9 +295,12 @@ namespace XRMultiplayer
                         // Get spawn transform for Player 2's XROrigin
                         var (xrPosition, xrRotation) = XRINetworkGameManager.Instance.GetSpawnTransform();
 
-                        // Position and rotate the XROrigin
-                        m_XROrigin.transform.position = xrPosition;
-                        m_XROrigin.transform.rotation = xrRotation;
+                        // Position and rotate the OVRCameraRig
+                        if (m_OVRCameraRig != null)
+                        {
+                            m_OVRCameraRig.position = xrPosition;
+                            m_OVRCameraRig.rotation = xrRotation;
+                        }
 
                         // Store the offset and rotation to apply to networked transforms later
                         m_SpawnOffset.Value = xrPosition;
@@ -297,6 +315,27 @@ namespace XRMultiplayer
                 else
                 {
                     Utils.Log("No XR Rig Available", 1);
+                }
+                
+                // Try to find hand origins if not set by XRHandPoseReplicator yet
+                if (m_LeftHandOrigin == null || m_RightHandOrigin == null)
+                {
+                    if (m_OVRCameraRig != null)
+                    {
+                        var trackingSpace = m_OVRCameraRig.Find("TrackingSpace");
+                        if (trackingSpace != null)
+                        {
+                            var leftHand = trackingSpace.Find("LeftHandAnchor");
+                            var rightHand = trackingSpace.Find("RightHandAnchor");
+                            
+                            if (leftHand != null && rightHand != null)
+                            {
+                                m_LeftHandOrigin = leftHand;
+                                m_RightHandOrigin = rightHand;
+                                Debug.Log("[XRINetworkPlayer] Found and set hand anchors from OVRCameraRig");
+                            }
+                        }
+                    }
                 }
                 
                 LoadSettings();

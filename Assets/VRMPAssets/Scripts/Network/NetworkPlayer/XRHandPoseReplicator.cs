@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SubsystemsImplementation;
@@ -51,7 +50,7 @@ namespace XRMultiplayer
         readonly NetworkVariable<XRInputModalityManager.InputMode> m_TrackingType = new(XRInputModalityManager.InputMode.None, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
         XRInputModalityManager m_XRModalityManager;
-        XROrigin m_XROrigin;
+        Transform m_OVRCameraRig;
 
         Transform m_LeftHandTransformReference;
         Transform m_RightHandTransformReference;

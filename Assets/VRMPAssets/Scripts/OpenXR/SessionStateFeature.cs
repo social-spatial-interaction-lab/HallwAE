@@ -119,8 +119,16 @@ namespace XRMultiplayer
         
         protected override void OnSessionDestroy(ulong xrSession)
         {
-            Utils.Log($"[SessionStateFeature.OnSessionDestroy] Called - Session: {xrSession}");
             base.OnSessionDestroy(xrSession);
+            Utils.Log($"[SessionStateFeature.OnSessionDestroy] Called - Session: {xrSession}");
+            
+            // Trigger shutdown when session is destroyed (Quest 3 doesn't call OnSessionExiting)
+            var gameManager = FindFirstObjectByType<XRINetworkGameManager>();
+            if (gameManager != null)
+            {
+                Utils.Log("[SessionStateFeature.OnSessionDestroy] Triggering shutdown from OnSessionDestroy");
+                gameManager.ShutDown();
+            }
         }
     }
 }
