@@ -67,3 +67,4 @@ HallwAE is a Unity-based VR multiplayer application that enables spontaneous hal
 - Network objects must have NetworkObject component
 - All networked interactions require proper RPC setup
 - Voice chat requires Vivox service configuration
+- Unity 6 deprecations: Use `FindFirstObjectByType` instead of `FindObjectOfType`

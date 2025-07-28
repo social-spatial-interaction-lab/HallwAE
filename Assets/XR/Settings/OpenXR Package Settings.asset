@@ -184,6 +184,26 @@ MonoBehaviour:
   company: Meta
   priority: 0
   required: 0
+--- !u!114 &-6135312963582646712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fc127002d8b24060bdda0868899e510, type: 3}
+  m_Name: SessionStateFeature Standalone
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: XR Multiplayer Session State Handler
+  version: 1.0.0
+  featureIdInternal: com.xrmultiplayer.openxr.feature.sessionstate
+  openxrExtensionStrings: 
+  company: XRMultiplayer
+  priority: 0
+  required: 0
 --- !u!114 &-5705074769602613156
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -571,6 +591,7 @@ MonoBehaviour:
   m_Name: Standalone
   m_EditorClassIdentifier: 
   features:
+  - {fileID: -6135312963582646712}
   - {fileID: 364518928516859943}
   - {fileID: 6803638353268240412}
   - {fileID: -4640181374995730701}
@@ -810,6 +831,26 @@ MonoBehaviour:
   featureIdInternal: com.unity.openxr.feature.input.oculustouch
   openxrExtensionStrings: 
   company: Unity
+  priority: 0
+  required: 0
+--- !u!114 &4569619868524394509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fc127002d8b24060bdda0868899e510, type: 3}
+  m_Name: SessionStateFeature Android
+  m_EditorClassIdentifier: 
+  m_enabled: 0
+  nameUi: 
+  version: 
+  featureIdInternal: 
+  openxrExtensionStrings: 
+  company: 
   priority: 0
   required: 0
 --- !u!114 &4764309271503046378

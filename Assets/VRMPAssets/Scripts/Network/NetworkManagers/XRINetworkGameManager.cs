@@ -264,19 +264,13 @@ namespace XRMultiplayer
             ShutDown();
         }
 
-        async void ShutDown()
+        public async void ShutDown()
         {
             if (m_IsShuttingDown) return;
             m_IsShuttingDown = true;
 
-            // Remove callbacks
-            if (NetworkManager.Singleton != null)
-            {
-                NetworkManager.Singleton.OnClientStopped -= OnLocalClientStopped;
-            }
-
-            // Shutdown lobby if owner, remove from lobby if not owner.
-            await m_LobbyManager.RemovePlayerFromLobby(AuthenicationId);
+            // Use DisconnectAsync to handle all cleanup properly
+            await DisconnectAsync();
         }
 
         public async Task<bool> Authenticate()
@@ -664,6 +658,12 @@ namespace XRMultiplayer
         /// <returns></returns>
         public virtual async Task<bool> DisconnectAsync()
         {
+            // Remove callbacks before shutdown
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientStopped -= OnLocalClientStopped;
+            }
+
             bool fullyDisconnected = await m_LobbyManager.RemovePlayerFromLobby(AuthenicationId);
             m_Connected.Value = false;
             NetworkManager.Shutdown();
