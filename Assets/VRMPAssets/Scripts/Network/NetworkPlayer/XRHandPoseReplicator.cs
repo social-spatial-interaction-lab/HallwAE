@@ -73,9 +73,14 @@ namespace XRMultiplayer
             // Initialize hand-tracking subsystem
             SubsystemManager.GetSubsystems(m_HandSubsystems);
             if (m_HandSubsystems.Count > 0)
+            {
                 m_HandSubsystem = m_HandSubsystems[0];
+            }
             else
-                Debug.LogError("No XRHandSubsystem found; finger tracking disabled.");
+            {
+                // This is expected in Editor or when hand tracking is not available
+                Debug.LogWarning("No XRHandSubsystem found; hand tracking features will be disabled. This is normal in Unity Editor.");
+            }
 
             m_FingerRotationsLeft = new NetworkList<Vector3>(new List<Vector3>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
             m_FingerRotationsRight = new NetworkList<Vector3>(new List<Vector3>(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -176,7 +181,8 @@ namespace XRMultiplayer
         {
             if (m_HandSubsystem == null)
             {
-                Debug.LogError("No XRHandSubsystem available for finger tracking.");
+                Debug.LogWarning("No XRHandSubsystem available for finger tracking. This is normal in Unity Editor.");
+                InitializeEmptyFingerData();
                 m_IsInitialized.Value = true;
                 return;
             }
@@ -193,19 +199,28 @@ namespace XRMultiplayer
             {
                 XRHandJointID jointId = (XRHandJointID)i;
 
-                // Left hand joint
-                var leftJoint = m_HandSubsystem.leftHand.GetJoint(jointId);
-                if (leftJoint.TryGetPose(out Pose leftPose))
-                    m_FingerRotationsLeft.Add(leftPose.rotation.eulerAngles);
-                else
-                    m_FingerRotationsLeft.Add(Vector3.zero);
+                if (m_HandSubsystem != null)
+                {
+                    // Left hand joint
+                    var leftJoint = m_HandSubsystem.leftHand.GetJoint(jointId);
+                    if (leftJoint.TryGetPose(out Pose leftPose))
+                        m_FingerRotationsLeft.Add(leftPose.rotation.eulerAngles);
+                    else
+                        m_FingerRotationsLeft.Add(Vector3.zero);
 
-                // Right hand joint
-                var rightJoint = m_HandSubsystem.rightHand.GetJoint(jointId);
-                if (rightJoint.TryGetPose(out Pose rightPose))
-                    m_FingerRotationsRight.Add(rightPose.rotation.eulerAngles);
+                    // Right hand joint
+                    var rightJoint = m_HandSubsystem.rightHand.GetJoint(jointId);
+                    if (rightJoint.TryGetPose(out Pose rightPose))
+                        m_FingerRotationsRight.Add(rightPose.rotation.eulerAngles);
+                    else
+                        m_FingerRotationsRight.Add(Vector3.zero);
+                }
                 else
+                {
+                    // No hand subsystem, use default values
+                    m_FingerRotationsLeft.Add(Vector3.zero);
                     m_FingerRotationsRight.Add(Vector3.zero);
+                }
 
                 // Initialize curl values
                 m_FingerCurlLeft.Add(0f);
@@ -213,6 +228,30 @@ namespace XRMultiplayer
             }
 
             m_IsInitialized.Value = true;
+        }
+
+        void InitializeEmptyFingerData()
+        {
+            // Initialize empty data for Unity Editor or when hand tracking is not available
+            m_FingerRotationsLeft.Clear();
+            m_FingerRotationsRight.Clear();
+            m_FingerCurlLeft.Clear();
+            m_FingerCurlRight.Clear();
+
+            // Add default values for controller-based finger tracking (5 fingers per hand)
+            for (int i = 0; i < 5; i++)
+            {
+                m_FingerCurlLeft.Add(0f);
+                m_FingerCurlRight.Add(0f);
+            }
+
+            // Add empty rotation data for all joints
+            int jointCount = (int)XRHandJointID.EndMarker;
+            for (int i = 0; i < jointCount; i++)
+            {
+                m_FingerRotationsLeft.Add(Vector3.zero);
+                m_FingerRotationsRight.Add(Vector3.zero);
+            }
         }
 
         public void ChangeControllerType(XRInputModalityManager.InputMode inputMode)
@@ -485,12 +524,12 @@ namespace XRMultiplayer
         {
             if (hand == 0)
             {
-                if (Mathf.Abs(m_FingerCurlLeft[finger] - value) > m_MinUpdateDelta)
+                if (finger < m_FingerCurlLeft.Count && Mathf.Abs(m_FingerCurlLeft[finger] - value) > m_MinUpdateDelta)
                     m_FingerCurlLeft[finger] = value;
             }
             else
             {
-                if (Mathf.Abs(m_FingerCurlRight[finger] - value) > m_MinUpdateDelta)
+                if (finger < m_FingerCurlRight.Count && Mathf.Abs(m_FingerCurlRight[finger] - value) > m_MinUpdateDelta)
                     m_FingerCurlRight[finger] = value;
             }
         }
