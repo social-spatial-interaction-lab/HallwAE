@@ -266,6 +266,7 @@ namespace XRMultiplayer
             ShutDown();
         }
 
+
         public async void ShutDown()
         {
             if (m_IsShuttingDown) return;

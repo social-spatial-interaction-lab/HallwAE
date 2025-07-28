@@ -81,6 +81,23 @@ namespace XRMultiplayer
 
             // Log state changes for debugging
             Utils.Log($"OpenXR Session State Changed: {GetStateName(oldState)} -> {GetStateName(newState)}");
+            
+            // Quest-specific: When transitioning to STOPPING, the session is being terminated
+            // This happens when user quits via system menu or the app is being closed
+            // Quest doesn't transition to EXITING state naturally - it goes STOPPING → IDLE
+            if (newState == XR_SESSION_STATE_STOPPING)
+            {
+                Utils.Log("[SessionStateFeature] Session entering STOPPING state - App is being terminated");
+                
+                // This is our most reliable indicator that the app is closing on Quest
+                // Trigger cleanup immediately when we see STOPPING state
+                var gameManager = FindFirstObjectByType<XRINetworkGameManager>();
+                if (gameManager != null)
+                {
+                    Utils.Log("[SessionStateFeature] Triggering shutdown from STOPPING state");
+                    gameManager.ShutDown();
+                }
+            }
         }
 
         private string GetStateName(int state)
