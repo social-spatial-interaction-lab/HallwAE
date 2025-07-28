@@ -68,3 +68,27 @@ HallwAE is a Unity-based VR multiplayer application that enables spontaneous hal
 - All networked interactions require proper RPC setup
 - Voice chat requires Vivox service configuration
 - Unity 6 deprecations: Use `FindFirstObjectByType` instead of `FindObjectOfType`
+
+## Quest 3 Specific Setup
+
+### XR Configuration
+- Uses OVRCameraRig (tagged as "PlayerRig") instead of XROrigin
+- Hand tracking requires XRInputModalityManager component on OVRCameraRig for automatic hand/controller switching
+- Meta XR SDK v71.0.0 includes Quest 3 controller models at `Library/PackageCache/com.meta.xr.sdk.core/Prefabs/`
+
+### Hand/Controller Switching
+- Quest3HandControllerManager handles visual switching between hands and controllers
+- Prevents controller models from getting stuck on hands during mode transitions
+- Configure with Meta XR SDK prefabs:
+  - Hand models: OVRHandPrefab or OVRCustomHandPrefab_L/R
+  - Controller models: OVRControllerPrefab (runtime instantiation)
+
+### App Exit Detection
+- SessionStateFeature (custom OpenXR feature) detects app quit on Quest 3
+- Quest 3 uses XR_SESSION_STATE_STOPPING instead of EXITING state
+- Triggers cleanup in XRINetworkGameManager.ShutDown() for proper room exit notification
+
+### Known Issues
+- Controller models may stick to hands when switching modes - use Quest3HandControllerManager to fix
+- Manual hand tracking detection needed if XRInputModalityManager is not present
+- Quest 3 doesn't call OnApplicationPause/Focus reliably for app exit detection
