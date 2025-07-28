@@ -119,6 +119,12 @@ namespace XRMultiplayer
         {
             if (!m_IsInitialized.Value || !NetworkManager.IsConnectedClient || NetworkManager.ShutdownInProgress) return;
 
+            // If no XRInputModalityManager, try to detect hand tracking manually
+            if (IsOwner && m_XRModalityManager == null && m_HandSubsystem != null)
+            {
+                CheckHandTrackingStatus();
+            }
+
             if (trackingType == XRInputModalityManager.InputMode.TrackedHand)
             {
                 switch (m_FidelityLevel)
@@ -151,6 +157,12 @@ namespace XRMultiplayer
                 {
                     m_XRModalityManager.trackedHandModeStarted.AddListener(SwapToHands);
                     m_XRModalityManager.motionControllerModeStarted.AddListener(SwapToControllers);
+                    Utils.Log("[XRHandPoseReplicator] Found XRInputModalityManager - hand/controller switching enabled");
+                }
+                else
+                {
+                    Utils.LogWarning("[XRHandPoseReplicator] XRInputModalityManager not found - hand/controller auto-switching disabled. " +
+                                   "Add XRInputModalityManager component to XR Origin to enable auto-switching.");
                 }
                 
                 // Locate the rig instance by tag and find hand anchors under it
@@ -545,6 +557,46 @@ namespace XRMultiplayer
         void GetNetworkedControllerFingerSync()
         {
             GetNetworkCurlLimited();
+        }
+
+        void CheckHandTrackingStatus()
+        {
+            // Check if hands are being tracked
+            bool leftHandTracked = m_HandSubsystem.leftHand.isTracked;
+            bool rightHandTracked = m_HandSubsystem.rightHand.isTracked;
+            
+            // Check if controllers are being tracked
+            bool controllersActive = false;
+            var devices = new List<UnityEngine.XR.InputDevice>();
+            UnityEngine.XR.InputDevices.GetDevicesAtXRNode(UnityEngine.XR.XRNode.LeftHand, devices);
+            UnityEngine.XR.InputDevices.GetDevicesAtXRNode(UnityEngine.XR.XRNode.RightHand, devices);
+            
+            foreach (var device in devices)
+            {
+                if (device.isValid && !device.name.ToLower().Contains("hand"))
+                {
+                    controllersActive = true;
+                    break;
+                }
+            }
+            
+            // Switch modes based on what's tracked
+            if ((leftHandTracked || rightHandTracked) && !controllersActive)
+            {
+                if (trackingType != XRInputModalityManager.InputMode.TrackedHand)
+                {
+                    Utils.Log("[XRHandPoseReplicator] Switching to hand tracking mode");
+                    SwapToHands();
+                }
+            }
+            else if (controllersActive && !leftHandTracked && !rightHandTracked)
+            {
+                if (trackingType != XRInputModalityManager.InputMode.MotionController)
+                {
+                    Utils.Log("[XRHandPoseReplicator] Switching to controller mode");
+                    SwapToControllers();
+                }
+            }
         }
 
         void SwapToHands()
