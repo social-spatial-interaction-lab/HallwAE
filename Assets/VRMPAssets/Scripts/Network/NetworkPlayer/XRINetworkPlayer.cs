@@ -261,7 +261,9 @@ namespace XRMultiplayer
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            Debug.Log($"OnNetworkSpawn - IsOwner: {IsOwner}, IsHost: {NetworkManager.Singleton.IsHost}, IsServer: {NetworkManager.Singleton.IsServer}");
+            Debug.Log($"[XRINetworkPlayer] OnNetworkSpawn - ClientId: {NetworkObject.OwnerClientId}, IsOwner: {IsOwner}, IsHost: {NetworkManager.Singleton.IsHost}, IsServer: {NetworkManager.Singleton.IsServer}");
+            Debug.Log($"[XRINetworkPlayer] GameObject: {gameObject.name}, Active: {gameObject.activeSelf}, Position: {transform.position}");
+            
             if (IsOwner)
             {
                 // Set Local Player
@@ -302,7 +304,22 @@ namespace XRMultiplayer
             }
             else // This runs on existing clients when a new player spawns
             {
-                 // Play spawn sound for existing players at the new player's location
+                Debug.Log($"[XRINetworkPlayer] Setting up remote player - ClientId: {NetworkObject.OwnerClientId}");
+                
+                // Check if hand objects are visible
+                if (m_handsObjects != null)
+                {
+                    Debug.Log($"[XRINetworkPlayer] Hand objects count: {m_handsObjects.Length}");
+                    foreach (var hand in m_handsObjects)
+                    {
+                        if (hand != null)
+                        {
+                            Debug.Log($"[XRINetworkPlayer] Hand object: {hand.name}, Active: {hand.activeSelf}");
+                        }
+                    }
+                }
+                
+                // Play spawn sound for existing players at the new player's location
                 if (m_AudioSource != null)
                 {
                     // Ensure the AudioSource is configured for 3D spatial sound in the inspector (Spatial Blend = 1)
@@ -403,6 +420,8 @@ namespace XRMultiplayer
         /// </summary>
         void CompleteSetup()
         {
+            Debug.Log($"[XRINetworkPlayer] CompleteSetup - ClientId: {NetworkObject.OwnerClientId}, IsOwner: {IsOwner}");
+            
             // Add player to XRINetworkManager.
             XRINetworkGameManager.Instance.PlayerJoined(NetworkObject.OwnerClientId);
 
