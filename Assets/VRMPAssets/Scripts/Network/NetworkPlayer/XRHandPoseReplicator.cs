@@ -108,7 +108,7 @@ namespace XRMultiplayer
         public override void OnDestroy()
         {
             base.OnDestroy();
-            if (IsOwner)
+            if (IsOwner && m_XRModalityManager != null)
             {
                 m_XRModalityManager.trackedHandModeStarted.RemoveListener(SwapToHands);
                 m_XRModalityManager.motionControllerModeStarted.RemoveListener(SwapToControllers);
@@ -145,6 +145,14 @@ namespace XRMultiplayer
             base.OnNetworkSpawn();
             if (IsOwner)
             {
+                // Find XRInputModalityManager if it exists
+                m_XRModalityManager = FindFirstObjectByType<XRInputModalityManager>();
+                if (m_XRModalityManager != null)
+                {
+                    m_XRModalityManager.trackedHandModeStarted.AddListener(SwapToHands);
+                    m_XRModalityManager.motionControllerModeStarted.AddListener(SwapToControllers);
+                }
+                
                 // Locate the rig instance by tag and find hand anchors under it
                 var rigGO = GameObject.FindWithTag("PlayerRig");
                 if (rigGO == null)
