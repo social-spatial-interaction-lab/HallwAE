@@ -42,13 +42,18 @@ namespace XRMultiplayer
         {
             base.OnSessionExiting(xrSession);
             
-            Utils.Log($"OpenXR Session is exiting - user requested app closure (Session: {xrSession})");
+            Utils.Log($"[SessionStateFeature.OnSessionExiting] Called - Session: {xrSession}");
             
             // Trigger cleanup for XRINetworkGameManager
             var gameManager = FindFirstObjectByType<XRINetworkGameManager>();
             if (gameManager != null)
             {
+                Utils.Log("[SessionStateFeature.OnSessionExiting] Found XRINetworkGameManager, calling ShutDown()");
                 gameManager.ShutDown();
+            }
+            else
+            {
+                Utils.Log("[SessionStateFeature.OnSessionExiting] XRINetworkGameManager not found");
             }
         }
 
@@ -96,14 +101,26 @@ namespace XRMultiplayer
 
         protected override bool OnInstanceCreate(ulong xrInstance)
         {
-            Utils.Log("SessionStateFeature instance created");
+            Utils.Log($"[SessionStateFeature.OnInstanceCreate] Called - Instance: {xrInstance}");
             return base.OnInstanceCreate(xrInstance);
         }
 
         protected override void OnInstanceDestroy(ulong xrInstance)
         {
-            Utils.Log("SessionStateFeature instance destroyed");
+            Utils.Log($"[SessionStateFeature.OnInstanceDestroy] Called - Instance: {xrInstance}");
             base.OnInstanceDestroy(xrInstance);
+        }
+        
+        protected override void OnSessionCreate(ulong xrSession)
+        {
+            Utils.Log($"[SessionStateFeature.OnSessionCreate] Called - Session: {xrSession}");
+            base.OnSessionCreate(xrSession);
+        }
+        
+        protected override void OnSessionDestroy(ulong xrSession)
+        {
+            Utils.Log($"[SessionStateFeature.OnSessionDestroy] Called - Session: {xrSession}");
+            base.OnSessionDestroy(xrSession);
         }
     }
 }

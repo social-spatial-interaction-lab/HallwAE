@@ -205,14 +205,13 @@ namespace XRMultiplayer
             XRINetworkGameManager.Instance.QuickJoinLobby();
         }
 
-        public async void QuitGame()
+        public void QuitGame()
         {
-            if (XRINetworkGameManager.Connected.Value)
-            {
-                await XRINetworkGameManager.Instance.DisconnectAsync();
-            }
+            Utils.Log("[PlayerOptions.QuitGame] Called - Quitting application");
+            
+            // Network cleanup is handled by OnApplicationQuit/OnDestroy/SessionStateFeature
 #if UNITY_EDITOR
-                EditorApplication.isPlaying = false;
+            EditorApplication.isPlaying = false;
 #else
             Application.Quit();
 #endif

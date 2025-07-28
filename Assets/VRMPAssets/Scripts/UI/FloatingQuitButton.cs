@@ -168,16 +168,11 @@ namespace XRMultiplayer
             }
         }
         
-        async void OnQuitButtonPressed()
+        void OnQuitButtonPressed()
         {
-            Debug.Log("Quit button pressed - Exiting application");
+            Utils.Log("[FloatingQuitButton.OnQuitButtonPressed] Called - Quitting application");
             
-            // Use the same quit logic as PlayerOptions
-            if (XRINetworkGameManager.Connected.Value)
-            {
-                await XRINetworkGameManager.Instance.DisconnectAsync();
-            }
-            
+            // Network cleanup is handled by OnApplicationQuit/OnDestroy/SessionStateFeature
 #if UNITY_EDITOR
             EditorApplication.isPlaying = false;
 #else

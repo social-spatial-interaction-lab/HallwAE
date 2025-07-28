@@ -251,6 +251,7 @@ namespace XRMultiplayer
         /// </summary>
         public override void OnDestroy()
         {
+            Utils.Log("[XRINetworkGameManager.OnDestroy] Called");
             base.OnDestroy();
 
             ShutDown();
@@ -261,6 +262,7 @@ namespace XRMultiplayer
         /// </summary>
         private void OnApplicationQuit()
         {
+            Utils.Log("[XRINetworkGameManager.OnApplicationQuit] Called");
             ShutDown();
         }
 
@@ -666,7 +668,13 @@ namespace XRMultiplayer
 
             bool fullyDisconnected = await m_LobbyManager.RemovePlayerFromLobby(AuthenicationId);
             m_Connected.Value = false;
-            NetworkManager.Shutdown();
+            
+            // Shutdown NetworkManager if it still exists
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.Shutdown();
+            }
+            
             if (IsAuthenticated())
             {
                 m_ConnectionState.Value = ConnectionState.Authenticated;
