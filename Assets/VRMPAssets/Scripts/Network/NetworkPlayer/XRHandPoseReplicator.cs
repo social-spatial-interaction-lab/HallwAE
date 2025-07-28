@@ -171,16 +171,34 @@ namespace XRMultiplayer
                     Debug.LogError("Could not find GameObject tagged 'PlayerRig'.");
                     return;
                 }
-                // Assumes tracking space has child 'TrackingSpace/LeftHandAnchor' and 'TrackingSpace/RightHandAnchor'
-                var left = rigGO.transform.Find("TrackingSpace/LeftHandAnchor");
-                var right = rigGO.transform.Find("TrackingSpace/RightHandAnchor");
-                if (left == null || right == null)
+                
+                // Find tracking space
+                var trackingSpace = rigGO.transform.Find("TrackingSpace");
+                if (trackingSpace == null)
                 {
-                    Debug.LogError("LeftHandAnchor or RightHandAnchor not found under PlayerRig/TrackingSpace.");
+                    Debug.LogError("TrackingSpace not found under PlayerRig.");
                     return;
                 }
-                m_LeftHandOrigin = left;
-                m_RightHandOrigin = right;
+                
+                // Find hand anchors
+                m_LeftHandTransformReference = trackingSpace.Find("LeftHandAnchor");
+                m_RightHandTransformReference = trackingSpace.Find("RightHandAnchor");
+                
+                // Find controller anchors (they might be the same as hand anchors on Quest)
+                m_LeftControllerTransformReference = m_LeftHandTransformReference;
+                m_RightControllerTransformReference = m_RightHandTransformReference;
+                
+                if (m_LeftHandTransformReference == null || m_RightHandTransformReference == null)
+                {
+                    Debug.LogError("LeftHandAnchor or RightHandAnchor not found under TrackingSpace.");
+                    return;
+                }
+                
+                // Set initial hand origins
+                // On Quest, hand and controller use the same anchors
+                m_LeftHandOrigin = m_LeftHandTransformReference;
+                m_RightHandOrigin = m_RightHandTransformReference;
+                
                 XRINetworkPlayer.LocalPlayer.SetHandOrigins(m_LeftHandOrigin, m_RightHandOrigin);
                 // 手指引用部分保持不变
                 SetupLocalFingerReferences();
