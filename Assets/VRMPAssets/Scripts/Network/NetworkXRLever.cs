@@ -54,14 +54,14 @@ namespace XRMultiplayer
             LeverChangedServerRpc(m_XRLever.value, NetworkManager.Singleton.LocalClientId);
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         void LeverChangedServerRpc(bool newValue, ulong clientId)
         {
             m_NetworkedLeverValue.Value = newValue;
             LeverChangedClientRpc(newValue, clientId);
         }
 
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         void LeverChangedClientRpc(bool newValue, ulong clientId)
         {
             if (clientId != NetworkManager.Singleton.LocalClientId)

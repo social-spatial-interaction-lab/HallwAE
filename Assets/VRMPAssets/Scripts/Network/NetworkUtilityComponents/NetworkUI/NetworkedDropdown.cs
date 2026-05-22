@@ -61,7 +61,7 @@ namespace XRMultiplayer
         /// </summary>
         /// <param name="dropdownValue">Value of the dropdown.</param>
         /// <param name="clientId">Local user Id.</param>
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         void UpdateDropdownServerRpc(int dropdownValue, ulong clientId)
         {
             UpdateDropdownClientRpc(dropdownValue, clientId);
@@ -72,7 +72,7 @@ namespace XRMultiplayer
         /// </summary>
         /// <param name="dropdownValue">Value of the dropdown.</param>
         /// <param name="clientId">Local user Id.</param>
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         void UpdateDropdownClientRpc(int dropdownValue, ulong clientId)
         {
             // Don't update on the local client if they sent the call.

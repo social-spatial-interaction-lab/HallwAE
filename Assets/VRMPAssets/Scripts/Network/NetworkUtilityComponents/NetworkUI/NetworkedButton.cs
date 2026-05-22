@@ -34,7 +34,7 @@ namespace XRMultiplayer
         /// Called from the local user to the Server when the local user has clicked the button.
         /// </summary>
         /// <param name="clientId">Local user Id.</param>
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         void ClickButtonServerRpc(ulong clientId)
         {
             ClickButtonClientRpc(clientId);
@@ -44,7 +44,7 @@ namespace XRMultiplayer
         /// Called from the Server on all clients after a local user has clicked the button.
         /// </summary>
         /// <param name="clientId">Local user Id.</param>
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         void ClickButtonClientRpc(ulong clientId)
         {
             // Don't update on the local client if they sent the call.

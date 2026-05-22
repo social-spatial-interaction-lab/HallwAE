@@ -105,6 +105,8 @@ namespace XRMultiplayer
         /// <inheritdoc/>
         private void LateUpdate()
         {
+            if (m_Camera == null) m_Camera = Camera.main;
+            if (m_Camera == null) return;
             m_Transform.position = m_Camera.transform.position;
 
             Quaternion lookRot = Quaternion.LookRotation(m_Camera.transform.forward);

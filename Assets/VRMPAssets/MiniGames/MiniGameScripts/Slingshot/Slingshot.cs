@@ -110,7 +110,7 @@ namespace XRMultiplayer.MiniGames
         /// <summary>
         /// Resets the proxy object on the clients.
         /// </summary>
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         private void ResetProxyObjectClientRpc()
         {
             StartCoroutine(ResetProxyAfterTime());

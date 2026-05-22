@@ -199,7 +199,7 @@ namespace XRMultiplayer.MiniGames
         /// Spawns a pig on the clients.
         /// </summary>
         /// <param name="waitTime">The time to wait before spawning the pig.</param>
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         public void SpawnProcessClientRpc(float waitTime)
         {
             m_Spawning = true;
@@ -255,7 +255,7 @@ namespace XRMultiplayer.MiniGames
         /// </summary>
         /// <param name="spawnIdx">The index of the spawn transform to use.</param>
         /// <param name="randomValue">A random value used to determine if a bad pig should be spawned.</param>
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         void SpawnPigClientRpc(int spawnIdx, float randomValue, float timeToStaySpawned)
         {
             StopTrickRoutine();
@@ -359,7 +359,7 @@ namespace XRMultiplayer.MiniGames
         /// Destroys a pig on the clients.
         /// </summary>
         /// <param name="clientId">The client ID of the owner of the pig.</param>
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         void DestroyPigClientRpc(ulong clientId)
         {
             if (XRINetworkPlayer.LocalPlayer.OwnerClientId != clientId && m_CurrentBreakablePig != null)

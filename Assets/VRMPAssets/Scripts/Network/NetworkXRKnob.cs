@@ -68,7 +68,7 @@ namespace XRMultiplayer
         /// </summary>
         /// <param name="newValue">The new value of the knob.</param>
         /// <param name="clientId">The client ID of the player who changed the knob value.</param>
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         void KnobChangedServerRpc(float newValue, ulong clientId)
         {
             m_NetworkedKnobValue.Value = newValue;
@@ -80,7 +80,7 @@ namespace XRMultiplayer
         /// </summary>
         /// <param name="newValue">The new value of the knob.</param>
         /// <param name="clientId">The client ID of the player who changed the knob value.</param>
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         void KnobChangedClientRpc(float newValue, ulong clientId)
         {
             if (clientId != NetworkManager.Singleton.LocalClientId)

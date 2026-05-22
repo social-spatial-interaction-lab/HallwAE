@@ -104,7 +104,7 @@ namespace XRMultiplayer
         /// Submits a message to the server.
         /// </summary>
         /// <param name="text">The message to submit.</param>
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         void SubmitMessageServerRpc(FixedString512Bytes text)
         {
             messageList.Add(text);
@@ -119,7 +119,7 @@ namespace XRMultiplayer
         /// Submits a message to the clients.
         /// </summary>
         /// <param name="text">The message to submit.</param>
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         void SubmitMessageClientRpc(FixedString512Bytes text)
         {
             CreateText(text.ToString());

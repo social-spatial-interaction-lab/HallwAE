@@ -116,7 +116,7 @@ namespace XRMultiplayer
         /// </summary>
         /// <param name="clientId">The client ID of the player who hit the target.</param>
         /// <param name="playerColor">The color of the player who hit the target.</param>
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         public void HitTargetServerRpc(ulong clientId, Color playerColor)
         {
             HitTargetClientRpc(clientId, playerColor);
@@ -127,7 +127,7 @@ namespace XRMultiplayer
         /// </summary>
         /// <param name="clientId">The client ID of the player who hit the target.</param>
         /// <param name="playerColor">The color of the player who hit the target.</param>
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         public void HitTargetClientRpc(ulong clientId, Color playerColor)
         {
             // Call the TargetHitNetwork method on the target corresponding to the current difficulty level

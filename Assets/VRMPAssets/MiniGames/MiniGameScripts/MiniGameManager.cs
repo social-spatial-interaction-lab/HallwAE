@@ -389,13 +389,13 @@ namespace XRMultiplayer.MiniGames
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         void TogglePlayerReadyServerRpc(ulong clientId, bool isReady)
         {
             TogglePlayerReadyClientRpc(clientId, isReady);
         }
 
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         void TogglePlayerReadyClientRpc(ulong clientId, bool isReady)
         {
             if (XRINetworkGameManager.Instance.GetPlayerByID(clientId, out var player))
@@ -488,7 +488,7 @@ namespace XRMultiplayer.MiniGames
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         void StartGameServerRpc()
         {
             for (int i = 0; i < m_QueuedUpPlayers.Count; i++)
@@ -499,7 +499,7 @@ namespace XRMultiplayer.MiniGames
             networkedGameState.Value = GameState.InGame;
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         public void StopGameServerRpc()
         {
             networkedGameState.Value = GameState.PostGame;
@@ -531,13 +531,13 @@ namespace XRMultiplayer.MiniGames
         /// <param name="score">The Score to set for the player.</param>
         /// <param name="clientId">Client ID of the player to set the score for.</param>
         /// <param name="finishGameOnScoreSubmit">Whether or not to finish the game on score submit.</param>
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         public void SubmitScoreServerRpc(float score, ulong clientId, bool finishGameOnScoreSubmit = false)
         {
             SubmitScoreClientRpc(score, clientId, finishGameOnScoreSubmit);
         }
 
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         void SubmitScoreClientRpc(float score, ulong clientId, bool finishGameOnScoreSubmit = false)
         {
             if (XRINetworkGameManager.Instance.GetPlayerByID(clientId, out XRINetworkPlayer player))
@@ -617,7 +617,7 @@ namespace XRMultiplayer.MiniGames
             RemovePlayerServerRpc(XRINetworkPlayer.LocalPlayer.OwnerClientId);
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         void AddPlayerServerRpc(ulong clientId)
         {
             AddPlayerClientRpc(clientId);
@@ -627,7 +627,7 @@ namespace XRMultiplayer.MiniGames
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [Rpc(SendTo.Server, RequireOwnership = false)]
         void RemovePlayerServerRpc(ulong clientId)
         {
             RemovePlayerClientRpc(clientId);
@@ -643,7 +643,7 @@ namespace XRMultiplayer.MiniGames
             }
         }
 
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         void AddPlayerClientRpc(ulong clientId)
         {
             if (currentPlayerDictionary.Count < maxAllowedPlayers)
@@ -695,7 +695,7 @@ namespace XRMultiplayer.MiniGames
             }
         }
 
-        [ClientRpc]
+        [Rpc(SendTo.ClientsAndHost)]
         void RemovePlayerClientRpc(ulong clientId)
         {
             if (XRINetworkGameManager.Instance.GetPlayerByID(clientId, out XRINetworkPlayer player))
